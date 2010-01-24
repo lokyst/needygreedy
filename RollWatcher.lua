@@ -953,14 +953,20 @@ function RollWatcher:PopulateReportTooltip()
     for i = 1, nItems do
         table.insert(arrowTable, "")
     end
-    table.insert(arrowTable, "|TInterface\\Buttons\\UI-SpellbookIcon-PrevPage-Up:" .. iconSize .. "|t")
-    table.insert(arrowTable, "|TInterface\\Buttons\\UI-SpellbookIcon-NextPage-Up:" .. iconSize .. "|t")
-    lineNum, _ = self.tooltip:AddLine(unpack(arrowTable))
-
-    -- Script to make arrows clickable
-    colNum = nItems + 2
-    self.tooltip:SetCellScript(lineNum, colNum, "OnMouseUp", function() self:PageLeft() end)
-    self.tooltip:SetCellScript(lineNum, colNum + 1, "OnMouseUp", function() self:PageRight() end)
+    local lineNum, _ = self.tooltip:AddLine(unpack(arrowTable))
+    local colNum = nItems + 2
+    if report.firstitem > 1 then
+        self.tooltip:SetCell(lineNum, colNum, "|TInterface\\Buttons\\UI-SpellbookIcon-PrevPage-Up:" .. iconSize .. "|t")
+        self.tooltip:SetCellScript(lineNum, colNum, "OnMouseUp", function() self:PageLeft() end)
+    else
+        self.tooltip:SetCell(lineNum, colNum, "|TInterface\\Buttons\\UI-SpellbookIcon-PrevPage-Disabled:" .. iconSize .. "|t")
+    end
+    if report.firstitem + nItems - 1 < count then
+        self.tooltip:SetCell(lineNum, colNum + 1, "|TInterface\\Buttons\\UI-SpellbookIcon-NextPage-Up:" .. iconSize .. "|t")
+        self.tooltip:SetCellScript(lineNum, colNum + 1, "OnMouseUp", function() self:PageRight() end)
+    else
+        self.tooltip:SetCell(lineNum, colNum + 1, "|TInterface\\Buttons\\UI-SpellbookIcon-NextPage-Disabled:" .. iconSize .. "|t")
+    end
 
 end
 
