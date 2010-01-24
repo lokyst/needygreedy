@@ -912,7 +912,15 @@ function RollWatcher:PopulateReportTooltip()
             texture = "|T" .. item.texture .. ":40|t"
         end
         self.tooltip:SetCell(headerline, i + 1, texture, nil, nil, nil, nil, nil, nil, nil, 60)
-        --self.tooltip:SetCellScript(headerline, i + 1, "OnEnter", function() self:Print(item.link) end )
+        if item then
+            self.tooltip:SetCellScript(headerline, i + 1, "OnEnter", function()
+                GameTooltip:SetOwner(self.tooltip, "ANCHOR_RIGHT")
+                GameTooltip:SetHyperlink(item.link)
+            end )
+            self.tooltip:SetCellScript(headerline, i + 1, "OnLeave", function()
+                GameTooltip:Hide()
+            end )
+        end
     end
 
     self.tooltip:AddSeparator()
