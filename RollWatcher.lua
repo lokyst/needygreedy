@@ -776,11 +776,11 @@ end
 
 function RollWatcher:SetNItems(info, nitems)
     self.db.profile.nitems = nitems
-    self:ResizeFrames()
     if self.tooltip then
         self:HideReportFrame()
         self:ShowReportFrame()
     end
+    self:ResizeFrames()
 end
 
 function RollWatcher:GetNameListWidth(info)
@@ -975,7 +975,6 @@ function RollWatcher:PopulateReportTooltip()
     else
         self.tooltip:SetCell(lineNum, colNum + 1, "|TInterface\\Buttons\\UI-SpellbookIcon-NextPage-Disabled:" .. iconSize .. "|t")
     end
-
 end
 
 function RollWatcher:TestItemList()
