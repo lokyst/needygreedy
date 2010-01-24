@@ -777,6 +777,10 @@ end
 function RollWatcher:SetNItems(info, nitems)
     self.db.profile.nitems = nitems
     self:ResizeFrames()
+    if self.tooltip then
+        self:HideReportFrame()
+        self:ShowReportFrame()
+    end
 end
 
 function RollWatcher:GetNameListWidth(info)
@@ -830,11 +834,13 @@ local LibQTip = LibStub('LibQTip-1.0')
 function RollWatcher:ShowReportFrame()
     -- Acquire a tooltip
     self.tooltip = LibQTip:Acquire("RollWatcherReport", 1, "LEFT")
-
     -- Add columns here because tooltip:Clear() preserves columns
     for i = 1, self.db.profile.nitems do
         self.tooltip:AddColumn("LEFT")
     end
+    -- Add two columns for left and right dialog buttons
+    self.tooltip:AddColumn("RIGHT")
+    self.tooltip:AddColumn("LEFT")
 
     RollWatcher:PopulateReportTooltip()
 
@@ -880,43 +886,34 @@ function RollWatcher:HideReportFrame()
 end
 
 function RollWatcher:PopulateReportTooltip()
-    self.tooltip:Clear()
-
+    local nItems = self.db.profile.nitems
     local players = self:GetSortedPlayers()
+    self.tooltip:Clear()
 
     -- Verify that report.firstitem is set reasonably
     local sorted = self:SortRollids()
     local count = self:CountItems()
-    local firstItem = 0
-
-    if firstItem > count then
-        firstItem = count
-    elseif firstItem == 0 then
-        firstItem = 1
-    else
-        firstItem = 0
+    if count == 0 then
+        report.firstitem = 1
+    elseif report.firstitem > count then
+        report.firstitem = count
     end
 
-    -- Create header table
+    -- Create headers
     local itemHeaders = {"Party"}
-    local itemSpacer = {""}
-    for i = 1, self.db.profile.nitems do
-        local index = firstItem + i - 1
+    local headerline = self.tooltip:AddHeader(unpack(itemHeaders))
+    for i = 1, nItems do
+        local index = report.firstitem + i - 1
+        local texture = ""
+        local item = nil
         if index <= count then
             local rollID = sorted[index]
-            local item = items[rollID]
-            table.insert(itemHeaders, "|T" .. item.texture .. ":40|t")
-            table.insert(itemSpacer, "")
+            item = items[rollID]
+            texture = "|T" .. item.texture .. ":40|t"
         end
+        self.tooltip:SetCell(headerline, i + 1, texture, nil, nil, nil, nil, nil, nil, nil, 60)
+        --self.tooltip:SetCellScript(headerline, i + 1, "OnEnter", function() self:Print(item.link) end )
     end
-
-    -- Set column width and add headers
-    local lineNum, colNum
-    lineNum, colNum = self.tooltip:AddHeader(unpack(itemSpacer))
-    for i = 1, self.db.profile.nitems + 1  do
-        self.tooltip:SetCell(lineNum, i, "", nil, nil, nil, nil, nil, nil, nil, 60)
-    end
-    self.tooltip:AddHeader(unpack(itemHeaders))
 
     self.tooltip:AddSeparator()
 
@@ -925,8 +922,8 @@ function RollWatcher:PopulateReportTooltip()
         local rollTable = {}
         table.insert(rollTable, self:ColorizeName(name))
 
-        for i = 1, self.db.profile.nitems do
-            local index = firstItem + i - 1
+        for i = 1, nItems do
+            local index = report.firstitem + i - 1
             if index <= count then
                 local rollID = sorted[index]
                 local item = items[rollID]
@@ -938,10 +935,11 @@ function RollWatcher:PopulateReportTooltip()
     end
 
     self.tooltip:AddSeparator()
-    --
+
+    -- Display winner
     local winnerTable = {"Winner"}
-    for i = 1, self.db.profile.nitems do
-        local index = firstItem + i - 1
+    for i = 1, nItems do
+        local index = report.firstitem + i - 1
         if index <= count then
             local rollID = sorted[index]
             local item = items[rollID]
@@ -949,6 +947,21 @@ function RollWatcher:PopulateReportTooltip()
         end
     end
     self.tooltip:AddLine(unpack(winnerTable))
+
+    -- Display left and right arrows
+    local arrowTable = {""}
+    for i = 1, nItems do
+        table.insert(arrowTable, "")
+    end
+    table.insert(arrowTable, "|TInterface\\Buttons\\UI-SpellbookIcon-PrevPage-Up:" .. iconSize .. "|t")
+    table.insert(arrowTable, "|TInterface\\Buttons\\UI-SpellbookIcon-NextPage-Up:" .. iconSize .. "|t")
+    lineNum, _ = self.tooltip:AddLine(unpack(arrowTable))
+
+    -- Script to make arrows clickable
+    colNum = nItems + 2
+    self.tooltip:SetCellScript(lineNum, colNum, "OnMouseUp", function() self:PageLeft() end)
+    self.tooltip:SetCellScript(lineNum, colNum + 1, "OnMouseUp", function() self:PageRight() end)
+
 end
 
 function RollWatcher:TestItemList()
@@ -965,7 +978,7 @@ function RollWatcher:TestItemList()
         link = "|cff0070dd|Hitem:2169:0:0:0:0:0:0:1016630800:80|h[Buzzer Blade]|h|r",
         assigned = "",
         received = 0,
-        choices = {Matsuri = "need", Lubov = "greed"},
+        choices = {Matsuri = "disenchant", Lubov = "greed"},
         rolls = {Matsuri = "- 61", Lubov = "- 98"}
     }
     items[3] = {
