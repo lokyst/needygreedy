@@ -1,12 +1,8 @@
-## Interface: 30100
+## Interface: 30300
 ## Title: RollWatcher
 ## Notes: Displays who has rolled need/greed/pass on what loot items
 ## Version: 1.0.4
-## Author: Marco
-## X-Curse-Packaged-Version: v1.0.4
-## X-Curse-Project-Name: RollWatcher
-## X-Curse-Project-ID: rollwatcher
-## X-Curse-Repository-ID: wow/rollwatcher/mainline
+## Author: Marco, lokyst
 
 ## SavedVariables: RollWatcherDB
 

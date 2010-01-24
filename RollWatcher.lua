@@ -72,6 +72,13 @@ local options = {
 	 style = "dropdown",
 	 get = "GetQuality",
 	 set = "SetQuality"
+      },
+      displayIcons = {
+         name = "Display Icons",
+	 desc = "Display icons for rolls types instead of text strings",
+	 type = "toggle",
+	 get = "GetDisplayIcons",
+	 set = "SetDisplayIcons",
       }
    }
 }
@@ -82,7 +89,27 @@ local defaults = {
       namelistwidth = 100,
       scale = 1,
       expiry = 5,
-      quality = ITEM_QUALITY_EPIC
+      quality = ITEM_QUALITY_EPIC,
+      displayIcons = false,
+   }
+}
+
+local ROLLWATCHER_CHOICE = {
+   ["need"] = {
+      ["string"] = "|c00FF0000" .. NEED .. "|r",
+      ["icon"] = "|TInterface\\Buttons\\UI-GroupLoot-Dice-Up:32|t",
+   },
+   ["greed"] = {
+      ["string"] = "|c0000FF00" .. GREED .. "|r",
+      ["icon"] = "|TInterface\\Buttons\\UI-GroupLoot-Coin-Up:32|t",
+   },
+   ["pass"] = {
+      ["string"] = "|c00CCCCCC" .. PASS .. "|r",
+      ["icon"] = "|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_7:16|t",
+   },
+   ["disenchant"] = {
+      ["string"] = "|c00FF00FF" .. ROLL_DISENCHANT .. "|r",
+      ["icon"] = "|TInterface\\Buttons\\UI-GroupLoot-DE-Up:32|t",
    }
 }
 
@@ -258,6 +285,31 @@ function RollWatcher:CHAT_MSG_LOOT(event, msg)
    player, link, number = self:unformat(LOOT_ITEM_MULTIPLE, msg)
    if player then
       self:RecordReceived(link)
+      return
+   end
+
+   -- To handle new disenchant rules
+   link = self:unformat(LOOT_ROLL_DISENCHANT_SELF, msg)
+   if link then
+      self:RecordChoice(link, me, "disenchant")
+      return
+   end
+
+   player, link = self:unformat(LOOT_ROLL_DISENCHANT, msg)
+   if link then
+      self:RecordChoice(link, player, "disenchant")
+      return
+   end
+
+   player, link = self:unformat(LOOT_ROLL_DISENCHANT, msg)
+   if link then
+      self:RecordChoice(link, player, "disenchant")
+      return
+   end
+
+   number, link, player = self:unformat(LOOT_ROLL_ROLLED_DE, msg)
+   if number then
+      self:RecordRoll(link, player, number)
       return
    end
 end
@@ -566,15 +618,15 @@ function RollWatcher:ColorizeName(name)
 end
 
 function RollWatcher:ChoiceText(choice)
-   if choice == "need" then
-      return "|c00FF0000" .. NEED .. "|r"
-   elseif choice == "greed" then
-      return "|c0000FF00" .. GREED .. "|r"
-   elseif choice == "pass" then
-      return "|c00CCCCCC" .. PASS .. "|r"
-   else
-      return ""
+   local style = "string"
+   if self.db.profile.displayIcons == true then style = "icon" end
+
+   if choice then
+	if ROLLWATCHER_CHOICE[choice][style] then
+	   return ROLLWATCHER_CHOICE[choice][style]
+	end
    end
+   return ""
 end
 
 function RollWatcher:RollText(number)
@@ -748,4 +800,12 @@ end
 
 function RollWatcher:SetQuality(info, quality)
    self.db.profile.quality = quality
+end
+
+function RollWatcher:GetDisplayIcons(info)
+   return self.db.profile.displayIcons
+end
+
+function RollWatcher:SetDisplayIcons(info, displayIcons)
+   self.db.profile.displayIcons = displayIcons
 end
