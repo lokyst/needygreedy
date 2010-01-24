@@ -1,4 +1,4 @@
-RollWatcher = LibStub("AceAddon-3.0"):NewAddon("RollWatcher", "AceEvent-3.0", "AceTimer-3.0")
+RollWatcher = LibStub("AceAddon-3.0"):NewAddon("RollWatcher", "AceEvent-3.0", "AceTimer-3.0", "AceConsole-3.0")
 
 LibStub:GetLibrary("LibDataBroker-1.1"):NewDataObject("RollWatcher", {
 	type = "launcher",
@@ -94,14 +94,15 @@ local defaults = {
    }
 }
 
+local iconSize = 27
 local ROLLWATCHER_CHOICE = {
    ["need"] = {
       ["string"] = "|c00FF0000" .. NEED .. "|r",
-      ["icon"] = "|TInterface\\Buttons\\UI-GroupLoot-Dice-Up:32|t",
+      ["icon"] = "|TInterface\\Buttons\\UI-GroupLoot-Dice-Up:" .. iconSize .. "|t",
    },
    ["greed"] = {
       ["string"] = "|c0000FF00" .. GREED .. "|r",
-      ["icon"] = "|TInterface\\Buttons\\UI-GroupLoot-Coin-Up:32|t",
+      ["icon"] = "|TInterface\\Buttons\\UI-GroupLoot-Coin-Up:" .. iconSize .. "|t",
    },
    ["pass"] = {
       ["string"] = "|c00CCCCCC" .. PASS .. "|r",
@@ -109,7 +110,7 @@ local ROLLWATCHER_CHOICE = {
    },
    ["disenchant"] = {
       ["string"] = "|c00FF00FF" .. ROLL_DISENCHANT .. "|r",
-      ["icon"] = "|TInterface\\Buttons\\UI-GroupLoot-DE-Up:32|t",
+      ["icon"] = "|TInterface\\Buttons\\UI-GroupLoot-DE-Up:" .. iconSize .. "|t",
    }
 }
 
@@ -121,6 +122,8 @@ function RollWatcher:OnInitialize()
    options.args.profiles = LibStub("AceDBOptions-3.0"):GetOptionsTable(self.db)
    LibStub("AceConfig-3.0"):RegisterOptionsTable("RollWatcher", options)
    LibStub("AceConfigDialog-3.0"):AddToBlizOptions("RollWatcher")
+   self:RegisterChatCommand("rwt", "TestItemList")
+   self:RegisterChatCommand("rollwatcher", function() InterfaceOptionsFrame_OpenToCategory("RollWatcher") end)
    self:SetupFrames()
 end
 
@@ -669,6 +672,10 @@ function RollWatcher:CountItems()
 end
 
 function RollWatcher:UpdateReport()
+   if self.tooltip and self.tooltip:IsShown() then
+      self:PopulateReportTooltip()
+   end
+
    local players = self:GetSortedPlayers()
 
    -- Place name list into report.namelist
@@ -813,6 +820,7 @@ end
 
 function RollWatcher:SetDisplayIcons(info, displayIcons)
    self.db.profile.displayIcons = displayIcons
+   self:UpdateReport()
 end
 
 
@@ -820,15 +828,15 @@ end
 local LibQTip = LibStub('LibQTip-1.0')
 
 function RollWatcher:ShowReportFrame()
+   -- Acquire a tooltip
+   self.tooltip = LibQTip:Acquire("RollWatcherReport", 1, "LEFT")
 
-   -- Acquire a tooltip with 3 columns, respectively aligned to left, center and right
-   self.tooltip = LibQTip:Acquire("FooBarTooltip", 3, "LEFT", "CENTER", "RIGHT")
+   -- Add columns here because tooltip:Clear() preserves columns
+   for i = 1, self.db.profile.nitems do
+      self.tooltip:AddColumn("LEFT")
+   end
 
-   -- Add an header filling only the first two columns
-   self.tooltip:AddHeader('Anchor', 'Tooltip')
-
-   -- Add an new line, using all columns
-   self.tooltip:AddLine('Hello', 'World', 'Bob!')
+   RollWatcher:PopulateReportTooltip()
 
    -- To make tooltip detached
    self.tooltip:ClearAllPoints()
@@ -852,6 +860,7 @@ function RollWatcher:ShowReportFrame()
    -- Make it move !
    self.tooltip:SetScript("OnMouseDown", function() self.tooltip:StartMoving() end)
    self.tooltip:SetScript("OnMouseUp", function()
+      -- Make it remember
       self.tooltip:StopMovingOrSizing()
       local anchor1, _, anchor2, x, y = self.tooltip:GetPoint()
       self.db.profile.reportFramePos.anchor1 = anchor1
@@ -859,8 +868,6 @@ function RollWatcher:ShowReportFrame()
       self.db.profile.reportFramePos.x = x
       self.db.profile.reportFramePos.y = y
    end)
-
-   -- Make it remember
 
    -- Show it, et voilà !
    self.tooltip:Show()
@@ -870,4 +877,105 @@ function RollWatcher:HideReportFrame()
    self.tooltip:Hide()
    LibQTip:Release(self.tooltip)
    self.tooltip = nil
+end
+
+function RollWatcher:PopulateReportTooltip()
+   self.tooltip:Clear()
+
+   local players = self:GetSortedPlayers()
+
+   -- Verify that report.firstitem is set reasonably
+   local sorted = self:SortRollids()
+   local count = self:CountItems()
+   local firstItem = 0
+
+   if firstItem > count then
+      firstItem = count
+   elseif firstItem == 0 then
+      firstItem = 1
+   else
+      firstItem = 0
+   end
+
+   -- Create header table
+   local itemHeaders = {"Party"}
+   local itemSpacer = {""}
+   for i = 1, self.db.profile.nitems do
+      local index = firstItem + i - 1
+      if index <= count then
+	 local rollID = sorted[index]
+	 local item = items[rollID]
+	 table.insert(itemHeaders, "|T" .. item.texture .. ":40|t")
+	 table.insert(itemSpacer, "")
+      end
+   end
+
+   -- Set column width and add headers
+   local lineNum, colNum
+   lineNum, colNum = self.tooltip:AddHeader(unpack(itemSpacer))
+   for i = 1, self.db.profile.nitems + 1  do
+      self.tooltip:SetCell(lineNum, i, "", nil, nil, nil, nil, nil, nil, nil, 60)
+   end
+   self.tooltip:AddHeader(unpack(itemHeaders))
+
+   self.tooltip:AddSeparator()
+
+   -- Create table with party names and their rolls
+   for i, name in ipairs(players) do
+      local rollTable = {}
+      table.insert(rollTable, self:ColorizeName(name))
+
+      for i = 1, self.db.profile.nitems do
+         local index = firstItem + i - 1
+         if index <= count then
+	    local rollID = sorted[index]
+	    local item = items[rollID]
+            table.insert(rollTable, self:ChoiceText(item.choices[name]) .. self:RollText(item.rolls[name]))
+         end
+      end
+
+      self.tooltip:AddLine(unpack(rollTable))
+   end
+
+   self.tooltip:AddSeparator()
+   --
+   local winnerTable = {"Winner"}
+   for i = 1, self.db.profile.nitems do
+      local index = firstItem + i - 1
+      if index <= count then
+         local rollID = sorted[index]
+	 local item = items[rollID]
+	 table.insert(winnerTable, self:AssignedText(item))
+      end
+   end
+   self.tooltip:AddLine(unpack(winnerTable))
+
+end
+
+function RollWatcher:TestItemList()
+      items[1] = {
+         texture = "Interface\\Icons\\INV_Weapon_ShortBlade_04",
+ 	 link = "|cff0070dd|Hitem:2169:0:0:0:0:0:0:1016630800:80|h[Buzzer Blade]|h|r",
+	 assigned = "",
+	 received = 0,
+	 choices = {},
+	 rolls = {}
+      }
+      items[2] = {
+         texture = "Interface\\Icons\\INV_Weapon_ShortBlade_05",
+ 	 link = "|cff0070dd|Hitem:2169:0:0:0:0:0:0:1016630800:80|h[Buzzer Blade]|h|r",
+	 assigned = "",
+	 received = 0,
+	 choices = {Matsuri = "need", Lubov = "greed"},
+	 rolls = {Matsuri = "- 61", Lubov = "- 98"}
+      }
+      items[3] = {
+         texture = "Interface\\Icons\\INV_Weapon_ShortBlade_06",
+ 	 link = "|cff0070dd|Hitem:2169:0:0:0:0:0:0:1016630800:80|h[Buzzer Blade]|h|r",
+	 assigned = "Matsuri",
+	 received = 15130,
+	 choices = {Emberly = "pass", Matsuri = "need"},
+	 rolls = {Emberly = "---", Matsuri = " - 42"}
+      }
+      self:UpdateReport()
 end

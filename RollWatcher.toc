@@ -5,6 +5,7 @@
 ## Author: Marco, lokyst
 
 ## SavedVariables: RollWatcherDB
+##OptionalDeps: Blizzard_DebugTools
 
 embeds.xml
 
