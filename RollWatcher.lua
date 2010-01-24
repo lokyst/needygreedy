@@ -137,10 +137,10 @@ function RollWatcher:OnDisable()
 end
 
 function RollWatcher:ToggleDisplay()
-   if report:IsShown() then
-      report:Hide()
+   if self.tooltip then
+      self:HideReportFrame()
    else
-      report:Show()
+      self:ShowReportFrame()
    end
 end
 
@@ -371,6 +371,11 @@ function RollWatcher:SetupFrames()
    report:RegisterForDrag("LeftButton")
    report:SetScript("OnDragStart", function() this:StartMoving() end)
    report:SetScript("OnDragStop", function() this:StopMovingOrSizing() end)
+
+   -- QTip Shiz
+   report:SetScript('OnEnter', anchor_OnEnter)
+   report:SetScript('OnLeave', anchor_OnLeave)
+
    report:SetBackdrop({
 			 bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background", tile = true, tileSize = 16,
 			 edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 16,
@@ -808,4 +813,61 @@ end
 
 function RollWatcher:SetDisplayIcons(info, displayIcons)
    self.db.profile.displayIcons = displayIcons
+end
+
+
+-- Detachable QTip Frames
+local LibQTip = LibStub('LibQTip-1.0')
+
+function RollWatcher:ShowReportFrame()
+
+   -- Acquire a tooltip with 3 columns, respectively aligned to left, center and right
+   self.tooltip = LibQTip:Acquire("FooBarTooltip", 3, "LEFT", "CENTER", "RIGHT")
+
+   -- Add an header filling only the first two columns
+   self.tooltip:AddHeader('Anchor', 'Tooltip')
+
+   -- Add an new line, using all columns
+   self.tooltip:AddLine('Hello', 'World', 'Bob!')
+
+   -- To make tooltip detached
+   self.tooltip:ClearAllPoints()
+   self.tooltip:SetFrameStrata("FULLSCREEN")
+   self.tooltip:EnableMouse(true)
+   self.tooltip:SetResizable(true)
+   self.tooltip:SetFrameLevel(1)
+   self.tooltip:SetMovable(true)
+   self.tooltip:SetClampedToScreen(true)
+
+   if not self.db.profile.reportFramePos then
+      self.db.profile.reportFramePos = {
+         anchor1 = "CENTER",
+	 anchor2 = "CENTER",
+         x = 0,
+	 y = 0
+      }
+   end
+   self.tooltip:SetPoint(self.db.profile.reportFramePos.anchor1, nil, self.db.profile.reportFramePos.anchor2, self.db.profile.reportFramePos.x, self.db.profile.reportFramePos.y)
+
+   -- Make it move !
+   self.tooltip:SetScript("OnMouseDown", function() self.tooltip:StartMoving() end)
+   self.tooltip:SetScript("OnMouseUp", function()
+      self.tooltip:StopMovingOrSizing()
+      local anchor1, _, anchor2, x, y = self.tooltip:GetPoint()
+      self.db.profile.reportFramePos.anchor1 = anchor1
+      self.db.profile.reportFramePos.anchor2 = anchor2
+      self.db.profile.reportFramePos.x = x
+      self.db.profile.reportFramePos.y = y
+   end)
+
+   -- Make it remember
+
+   -- Show it, et voilà !
+   self.tooltip:Show()
+end
+
+function RollWatcher:HideReportFrame()
+   self.tooltip:Hide()
+   LibQTip:Release(self.tooltip)
+   self.tooltip = nil
 end
