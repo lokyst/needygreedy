@@ -270,37 +270,37 @@ function NeedyGreedy:CHAT_MSG_LOOT(event, msg)
 
     link = self:unformat(LOOT_ITEM_PUSHED_SELF, msg)
     if link then
-        self:RecordReceived(link)
+        self:RecordReceived(link, me)
         return
     end
 
     link, number = self:unformat(LOOT_ITEM_PUSHED_SELF_MULTIPLE, msg)
     if link then
-        self:RecordReceived(link)
+        self:RecordReceived(link, me)
         return
     end
 
     link = self:unformat(LOOT_ITEM_SELF, msg)
     if link then
-        self:RecordReceived(link)
+        self:RecordReceived(link, me)
         return
     end
 
     link, number = self:unformat(LOOT_ITEM_SELF_MULTIPLE, msg)
     if link then
-        self:RecordReceived(link)
+        self:RecordReceived(link, me)
         return
     end
 
     player, link = self:unformat(LOOT_ITEM, msg)
     if player then
-        self:RecordReceived(link)
+        self:RecordReceived(link, player)
         return
     end
 
     player, link, number = self:unformat(LOOT_ITEM_MULTIPLE, msg)
     if player then
-        self:RecordReceived(link)
+        self:RecordReceived(link, player)
         return
     end
 
@@ -360,11 +360,15 @@ function NeedyGreedy:RecordAwarded(link, player)
     self:UpdateReport()
 end
 
-function NeedyGreedy:RecordReceived(link)
+function NeedyGreedy:RecordReceived(link, player)
     for rollid, record in pairs(items) do
         if record.received == 0 and record.link == link then
             record.received = GetTime()
             break
+        end
+        -- Since players receive disenchanted items not link
+        if record.choices[player] == "disenchant" and record.assigned == player and record.received == 0 then
+            record.received = GetTime()
         end
     end
     self:UpdateReport()
