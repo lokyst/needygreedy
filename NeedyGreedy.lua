@@ -1,10 +1,10 @@
-RollWatcher = LibStub("AceAddon-3.0"):NewAddon("RollWatcher", "AceEvent-3.0", "AceTimer-3.0", "AceConsole-3.0")
+NeedyGreedy = LibStub("AceAddon-3.0"):NewAddon("NeedyGreedy", "AceEvent-3.0", "AceTimer-3.0", "AceConsole-3.0")
 
-LibStub:GetLibrary("LibDataBroker-1.1"):NewDataObject("RollWatcher", {
+LibStub:GetLibrary("LibDataBroker-1.1"):NewDataObject("NeedyGreedy", {
           type = "launcher",
           icon = "Interface\\Buttons\\UI-GroupLoot-Dice-Up",
           OnClick = function(clickedframe, button)
-                     RollWatcher:ToggleDisplay()
+                     NeedyGreedy:ToggleDisplay()
           end,
 })
 
@@ -12,9 +12,9 @@ local report = {}
 local items = {}
 
 local options = {
-    name = "RollWatcher",
+    name = "NeedyGreedy",
     desc = "Displays a table of items and the roll choices players have made on them",
-    handler = RollWatcher,
+    handler = NeedyGreedy,
     type = "group",
     args = {
         nitems = {
@@ -91,32 +91,32 @@ local ROLLWATCHER_CHOICE = {
     }
 }
 
-function RollWatcher:OnInitialize()
-    self.db = LibStub("AceDB-3.0"):New("RollWatcherDB", defaults, true)
+function NeedyGreedy:OnInitialize()
+    self.db = LibStub("AceDB-3.0"):New("NeedyGreedyDB", defaults, true)
     self.db.RegisterCallback(self, "OnProfileChanged", "RefreshTooltip")
     self.db.RegisterCallback(self, "OnProfileCopied", "RefreshTooltip")
     self.db.RegisterCallback(self, "OnProfileReset", "RefreshTooltip")
     options.args.profiles = LibStub("AceDBOptions-3.0"):GetOptionsTable(self.db)
-    LibStub("AceConfig-3.0"):RegisterOptionsTable("RollWatcher", options)
-    LibStub("AceConfigDialog-3.0"):AddToBlizOptions("RollWatcher")
+    LibStub("AceConfig-3.0"):RegisterOptionsTable("NeedyGreedy", options)
+    LibStub("AceConfigDialog-3.0"):AddToBlizOptions("NeedyGreedy")
     self:RegisterChatCommand("rwt", "TestItemList")
-    self:RegisterChatCommand("rollwatcher", function() InterfaceOptionsFrame_OpenToCategory("RollWatcher") end)
+    self:RegisterChatCommand("rollwatcher", function() InterfaceOptionsFrame_OpenToCategory("NeedyGreedy") end)
 end
 
-function RollWatcher:OnEnable()
+function NeedyGreedy:OnEnable()
     self:RegisterEvent("PARTY_MEMBERS_CHANGED")
     self:RegisterEvent("START_LOOT_ROLL")
     self:RegisterEvent("CHAT_MSG_LOOT")
     self:ScheduleRepeatingTimer("ExpireItems", 1)
 end
 
-function RollWatcher:OnDisable()
+function NeedyGreedy:OnDisable()
     if self.tooltip then
         self:HideReportFrame()
     end
 end
 
-function RollWatcher:ToggleDisplay()
+function NeedyGreedy:ToggleDisplay()
     if self.tooltip then
         self:HideReportFrame()
     else
@@ -124,7 +124,7 @@ function RollWatcher:ToggleDisplay()
     end
 end
 
-function RollWatcher:PARTY_MEMBERS_CHANGED()
+function NeedyGreedy:PARTY_MEMBERS_CHANGED()
     if self.tooltip then
         self:RefreshTooltip()
     end
@@ -133,7 +133,7 @@ end
 
 
 -- Chat scanning and loot recording
-function RollWatcher:START_LOOT_ROLL(event, rollid)
+function NeedyGreedy:START_LOOT_ROLL(event, rollid)
     local texture, name, count, quality = GetLootRollItemInfo(rollid)
     local link = GetLootRollItemLink(rollid)
     if quality >= self.db.profile.quality then
@@ -149,7 +149,7 @@ function RollWatcher:START_LOOT_ROLL(event, rollid)
     end
 end
 
-function RollWatcher:CHAT_MSG_LOOT(event, msg)
+function NeedyGreedy:CHAT_MSG_LOOT(event, msg)
     local me = UnitName("player")
     local player, link, number
 
@@ -299,7 +299,7 @@ function RollWatcher:CHAT_MSG_LOOT(event, msg)
     end
 end
 
-function RollWatcher:RecordChoice(link, player, choice)
+function NeedyGreedy:RecordChoice(link, player, choice)
     for rollid, record in pairs(items) do
         if record.assigned == "" and record.link == link then
             record.choices[player] = choice
@@ -309,7 +309,7 @@ function RollWatcher:RecordChoice(link, player, choice)
     self:UpdateReport()
 end
 
-function RollWatcher:RecordRoll(link, player, number)
+function NeedyGreedy:RecordRoll(link, player, number)
     for rollid, record in pairs(items) do
         if record.assigned == "" and record.link == link then
             record.rolls[player] = number
@@ -319,7 +319,7 @@ function RollWatcher:RecordRoll(link, player, number)
     self:UpdateReport()
 end
 
-function RollWatcher:RecordAwarded(link, player)
+function NeedyGreedy:RecordAwarded(link, player)
     for rollid, record in pairs(items) do
         if record.assigned == "" and record.link == link then
             record.assigned = player
@@ -329,7 +329,7 @@ function RollWatcher:RecordAwarded(link, player)
     self:UpdateReport()
 end
 
-function RollWatcher:RecordReceived(link)
+function NeedyGreedy:RecordReceived(link)
     for rollid, record in pairs(items) do
         if record.received == 0 and record.link == link then
             record.received = GetTime()
@@ -342,26 +342,26 @@ end
 
 
 -- Tooltip Information Formatting
-function RollWatcher:PageLeft()
-    report.firstitem = report.firstitem - self.db.profile.nitems
-    if report.firstitem < 1 then
-        report.firstitem = 1
+function NeedyGreedy:PageLeft()
+    report.firstItem = report.firstItem - self.db.profile.nitems
+    if report.firstItem < 1 then
+        report.firstItem = 1
     end
     self:UpdateReport()
 end
 
-function RollWatcher:PageRight()
-    local count = RollWatcher:CountItems()
-    report.firstitem = report.firstitem + self.db.profile.nitems
+function NeedyGreedy:PageRight()
+    local count = NeedyGreedy:CountItems()
+    report.firstItem = report.firstItem + self.db.profile.nitems
     if count == 0 then
-        report.firstitem = 1
-    elseif report.firstitem > count then
-        report.firstitem = count
+        report.firstItem = 1
+    elseif report.firstItem > count then
+        report.firstItem = count
     end
     self:UpdateReport()
 end
 
-function RollWatcher:GetSortedPlayers()
+function NeedyGreedy:GetSortedPlayers()
     local list = {}
 
     if GetNumRaidMembers() > 0 then
@@ -383,7 +383,7 @@ function RollWatcher:GetSortedPlayers()
     return list
 end
 
-function RollWatcher:GetNumPlayers()
+function NeedyGreedy:GetNumPlayers()
     local nraid = GetNumRaidMembers()
     if nraid > 0 then
         return nraid
@@ -392,7 +392,7 @@ function RollWatcher:GetNumPlayers()
     end
 end
 
-function RollWatcher:ColorizeName(name)
+function NeedyGreedy:ColorizeName(name)
     -- Derived by hand from RAID_CLASS_COLORS because deriving it in lua seemed tricky
     -- Might not be that hard: str_format("%02x%02x%02x", r * 255, g * 255, b * 255)
     local map = {
@@ -419,7 +419,7 @@ function RollWatcher:ColorizeName(name)
     return color .. name .. "|r"
 end
 
-function RollWatcher:ChoiceText(choice)
+function NeedyGreedy:ChoiceText(choice)
     local style = "string"
     if self.db.profile.displayIcons == true then style = "icon" end
 
@@ -431,7 +431,7 @@ function RollWatcher:ChoiceText(choice)
     return ""
 end
 
-function RollWatcher:RollText(number)
+function NeedyGreedy:RollText(number)
     if number then
         return " " .. number
     else
@@ -439,7 +439,7 @@ function RollWatcher:RollText(number)
     end
 end
 
-function RollWatcher:AssignedText(item)
+function NeedyGreedy:AssignedText(item)
     if item.received == 0 then
         return "|c00FF0000" .. item.assigned .. "|r"
     else
@@ -448,7 +448,7 @@ function RollWatcher:AssignedText(item)
 end
 
 -- Return a list of rollids ordered from most recent to least recent
-function RollWatcher:SortRollids()
+function NeedyGreedy:SortRollids()
     local rollids = {}
     for rollid, _ in pairs(items) do
         table.insert(rollids, rollid)
@@ -457,7 +457,7 @@ function RollWatcher:SortRollids()
     return rollids
 end
 
-function RollWatcher:CountItems()
+function NeedyGreedy:CountItems()
     local i = 0
     for _, _ in pairs(items) do
         i = i + 1
@@ -465,7 +465,7 @@ function RollWatcher:CountItems()
     return i
 end
 
-function RollWatcher:ExpireItems()
+function NeedyGreedy:ExpireItems()
     local now = GetTime()
     local update = false
 
@@ -483,7 +483,7 @@ function RollWatcher:ExpireItems()
     end
 end
 
-function RollWatcher:unformat(fmt, msg)
+function NeedyGreedy:unformat(fmt, msg)
     local pattern = string.gsub(string.gsub(fmt, "(%%s)", "(.+)"), "(%%d)", "(.+)")
     local _, _, a1, a2, a3, a4 = string.find(msg, pattern)
     return a1, a2, a3, a4
@@ -492,37 +492,37 @@ end
 
 
 -- Config option getters and setters
-function RollWatcher:GetNItems(info)
+function NeedyGreedy:GetNItems(info)
     return self.db.profile.nitems
 end
 
-function RollWatcher:SetNItems(info, nitems)
+function NeedyGreedy:SetNItems(info, nitems)
     self.db.profile.nitems = nitems
     self:RefreshTooltip()
 end
 
-function RollWatcher:GetExpiry(info)
+function NeedyGreedy:GetExpiry(info)
     return self.db.profile.expiry
 end
 
-function RollWatcher:SetExpiry(info, expiry)
+function NeedyGreedy:SetExpiry(info, expiry)
     self.db.profile.expiry = expiry
     self:ExpireItems()
 end
 
-function RollWatcher:GetQuality(info)
+function NeedyGreedy:GetQuality(info)
     return self.db.profile.quality
 end
 
-function RollWatcher:SetQuality(info, quality)
+function NeedyGreedy:SetQuality(info, quality)
     self.db.profile.quality = quality
 end
 
-function RollWatcher:GetDisplayIcons(info)
+function NeedyGreedy:GetDisplayIcons(info)
     return self.db.profile.displayIcons
 end
 
-function RollWatcher:SetDisplayIcons(info, displayIcons)
+function NeedyGreedy:SetDisplayIcons(info, displayIcons)
     self.db.profile.displayIcons = displayIcons
     self:UpdateReport()
 end
@@ -531,9 +531,9 @@ end
 -- Detachable QTip Frames
 local LibQTip = LibStub('LibQTip-1.0')
 
-function RollWatcher:ShowReportFrame()
+function NeedyGreedy:ShowReportFrame()
     -- Acquire a tooltip
-    self.tooltip = LibQTip:Acquire("RollWatcherReport", 1, "LEFT")
+    self.tooltip = LibQTip:Acquire("NeedyGreedyReport", 1, "LEFT")
     -- Add columns here because tooltip:Clear() preserves columns
     for i = 1, self.db.profile.nitems do
         self.tooltip:AddColumn("LEFT")
@@ -542,7 +542,7 @@ function RollWatcher:ShowReportFrame()
     self.tooltip:AddColumn("RIGHT")
     self.tooltip:AddColumn("LEFT")
 
-    RollWatcher:PopulateReportTooltip()
+    self:PopulateReportTooltip()
 
     -- To make tooltip detached
     self.tooltip:ClearAllPoints()
@@ -579,33 +579,33 @@ function RollWatcher:ShowReportFrame()
     self.tooltip:Show()
 end
 
-function RollWatcher:HideReportFrame()
+function NeedyGreedy:HideReportFrame()
     self.tooltip:Hide()
     LibQTip:Release(self.tooltip)
     self.tooltip = nil
 end
 
-function RollWatcher:PopulateReportTooltip()
+function NeedyGreedy:PopulateReportTooltip()
     local nItems = self.db.profile.nitems
     local players = self:GetSortedPlayers()
     self.tooltip:Clear()
 
-    -- Verify that report.firstitem is set reasonably
+    -- Verify that report.firstItem is set reasonably
     local sorted = self:SortRollids()
     local count = self:CountItems()
 
-    if not(report.firstitem) then report.firstitem = 1 end
+    if not(report.firstItem) then report.firstItem = 1 end
     if count == 0 then
-        report.firstitem = 1
-    elseif report.firstitem > count then
-        report.firstitem = count
+        report.firstItem = 1
+    elseif report.firstItem > count then
+        report.firstItem = count
     end
 
     -- Create headers
     local itemHeaders = {"Party"}
     local headerline = self.tooltip:AddHeader(unpack(itemHeaders))
     for i = 1, nItems do
-        local index = report.firstitem + i - 1
+        local index = report.firstItem + i - 1
         local texture = ""
         local item = nil
         if index <= count then
@@ -633,7 +633,7 @@ function RollWatcher:PopulateReportTooltip()
         table.insert(rollTable, self:ColorizeName(name))
 
         for i = 1, nItems do
-            local index = report.firstitem + i - 1
+            local index = report.firstItem + i - 1
             if index <= count then
                 local rollID = sorted[index]
                 local item = items[rollID]
@@ -649,7 +649,7 @@ function RollWatcher:PopulateReportTooltip()
     -- Display winner
     local winnerTable = {"Winner"}
     for i = 1, nItems do
-        local index = report.firstitem + i - 1
+        local index = report.firstItem + i - 1
         if index <= count then
             local rollID = sorted[index]
             local item = items[rollID]
@@ -665,13 +665,13 @@ function RollWatcher:PopulateReportTooltip()
     end
     local lineNum, _ = self.tooltip:AddLine(unpack(arrowTable))
     local colNum = nItems + 2
-    if report.firstitem > 1 then
+    if report.firstItem > 1 then
         self.tooltip:SetCell(lineNum, colNum, "|TInterface\\Buttons\\UI-SpellbookIcon-PrevPage-Up:" .. iconSize .. "|t")
         self.tooltip:SetCellScript(lineNum, colNum, "OnMouseUp", function() self:PageLeft() end)
     else
         self.tooltip:SetCell(lineNum, colNum, "|TInterface\\Buttons\\UI-SpellbookIcon-PrevPage-Disabled:" .. iconSize .. "|t")
     end
-    if report.firstitem + nItems - 1 < count then
+    if report.firstItem + nItems - 1 < count then
         self.tooltip:SetCell(lineNum, colNum + 1, "|TInterface\\Buttons\\UI-SpellbookIcon-NextPage-Up:" .. iconSize .. "|t")
         self.tooltip:SetCellScript(lineNum, colNum + 1, "OnMouseUp", function() self:PageRight() end)
     else
@@ -679,13 +679,13 @@ function RollWatcher:PopulateReportTooltip()
     end
 end
 
-function RollWatcher:UpdateReport()
+function NeedyGreedy:UpdateReport()
     if self.tooltip and self.tooltip:IsShown() then
         self:PopulateReportTooltip()
     end
 end
 
-function RollWatcher:RefreshTooltip()
+function NeedyGreedy:RefreshTooltip()
     if self.tooltip then
         self:HideReportFrame()
         self:ShowReportFrame()
@@ -695,7 +695,7 @@ end
 
 
 -- Unit tests
-function RollWatcher:TestItemList()
+function NeedyGreedy:TestItemList()
     items[1] = {
         texture = "Interface\\Icons\\INV_Weapon_ShortBlade_04",
         link = "|cff0070dd|Hitem:2169:0:0:0:0:0:0:1016630800:80|h[Buzzer Blade]|h|r",

@@ -1,12 +1,12 @@
 ## Interface: 30300
-## Title: RollWatcher
+## Title: NeedyGreedy
 ## Notes: Displays who has rolled need/greed/pass on what loot items
-## Version: 1.0.4
+## Version: 1.0
 ## Author: Marco, lokyst
 
-## SavedVariables: RollWatcherDB
-##OptionalDeps: Blizzard_DebugTools
+## SavedVariables: NeedyGreedyDB
+## OptionalDeps: Blizzard_DebugTools
 
 embeds.xml
 
-RollWatcher.lua
+NeedyGreedy.lua
