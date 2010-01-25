@@ -72,7 +72,7 @@ local defaults = {
 }
 
 local iconSize = 27
-local ROLLWATCHER_CHOICE = {
+local NEEDYGREEDY_CHOICE = {
     ["need"] = {
         ["string"] = "|c00FF0000" .. NEED .. "|r",
         ["icon"] = "|TInterface\\Buttons\\UI-GroupLoot-Dice-Up:" .. iconSize .. "|t",
@@ -99,8 +99,8 @@ function NeedyGreedy:OnInitialize()
     options.args.profiles = LibStub("AceDBOptions-3.0"):GetOptionsTable(self.db)
     LibStub("AceConfig-3.0"):RegisterOptionsTable("NeedyGreedy", options)
     LibStub("AceConfigDialog-3.0"):AddToBlizOptions("NeedyGreedy")
-    self:RegisterChatCommand("rwt", "TestItemList")
-    self:RegisterChatCommand("rollwatcher", function() InterfaceOptionsFrame_OpenToCategory("NeedyGreedy") end)
+    self:RegisterChatCommand("ngt", "TestItemList")
+    self:RegisterChatCommand("needygreedy", function() InterfaceOptionsFrame_OpenToCategory("NeedyGreedy") end)
 end
 
 function NeedyGreedy:OnEnable()
@@ -424,8 +424,8 @@ function NeedyGreedy:ChoiceText(choice)
     if self.db.profile.displayIcons == true then style = "icon" end
 
     if choice then
-          if ROLLWATCHER_CHOICE[choice][style] then
-              return ROLLWATCHER_CHOICE[choice][style]
+          if NEEDYGREEDY_CHOICE[choice][style] then
+              return NEEDYGREEDY_CHOICE[choice][style]
           end
     end
     return ""
