@@ -6,7 +6,8 @@
 ## SavedVariables: NeedyGreedyDB
 ## OptionalDeps:
 
+embeds.xml
+
 Localization\enUS.lua
 
-embeds.xml
 NeedyGreedy.lua
