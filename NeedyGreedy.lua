@@ -701,6 +701,11 @@ function NeedyGreedy:PopulateReportTooltip()
                 GameTooltip:SetOwner(self.tooltip, "ANCHOR_RIGHT")
                 GameTooltip:SetHyperlink(item.link)
             end )
+                self.tooltip:SetCellScript(headerline, i + 1, "OnMouseUp", function()
+                    if IsShiftKeyDown() then
+                        ChatEdit_InsertLink(item.link)
+                    end
+                end )
             self.tooltip:SetCellScript(headerline, i + 1, "OnLeave", function()
                 GameTooltip:Hide()
             end )
@@ -724,6 +729,11 @@ function NeedyGreedy:PopulateReportTooltip()
                 self.tooltip:SetCellScript(headerline, i + 1, "OnEnter", function()
                     GameTooltip:SetOwner(self.tooltip, "ANCHOR_RIGHT")
                     GameTooltip:SetHyperlink(item.link)
+                end )
+                self.tooltip:SetCellScript(headerline, i + 1, "OnMouseUp", function()
+                    if IsShiftKeyDown() then
+                        ChatEdit_InsertLink(item.link)
+                    end
                 end )
                 self.tooltip:SetCellScript(headerline, i + 1, "OnLeave", function()
                     GameTooltip:Hide()
