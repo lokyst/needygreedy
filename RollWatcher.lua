@@ -8,9 +8,7 @@ LibStub:GetLibrary("LibDataBroker-1.1"):NewDataObject("RollWatcher", {
           end,
 })
 
-local fontsize = 12
-local iconheight = 40
-local report = nil
+local report = {}
 local items = {}
 
 local options = {
@@ -28,27 +26,6 @@ local options = {
             step = 1,
             get = "GetNItems",
             set = "SetNItems"
-        },
-        width = {
-            name = "Namelist Width",
-            desc = "Pixel width of columns containing names (increase if your raid has very long names)",
-            type = "range",
-            min = 80,
-            max = 250,
-            step = 1,
-            get = "GetNameListWidth",
-            set = "SetNameListWidth"
-        },
-        scale = {
-            name = "Window Scale",
-            desc = "Overall scaling of the display window",
-            type = "range",
-            min = 0.1,
-            max = 2,
-            step = 0.01,
-            isPercent = true,
-            get = "GetWindowScale",
-            set = "SetWindowScale"
         },
         expiry = {
             name = "Expiry Time",
@@ -116,15 +93,14 @@ local ROLLWATCHER_CHOICE = {
 
 function RollWatcher:OnInitialize()
     self.db = LibStub("AceDB-3.0"):New("RollWatcherDB", defaults, true)
-    self.db.RegisterCallback(self, "OnProfileChanged", "ResizeFrames")
-    self.db.RegisterCallback(self, "OnProfileCopied", "ResizeFrames")
-    self.db.RegisterCallback(self, "OnProfileReset", "ResizeFrames")
+    self.db.RegisterCallback(self, "OnProfileChanged", "RefreshTooltip")
+    self.db.RegisterCallback(self, "OnProfileCopied", "RefreshTooltip")
+    self.db.RegisterCallback(self, "OnProfileReset", "RefreshTooltip")
     options.args.profiles = LibStub("AceDBOptions-3.0"):GetOptionsTable(self.db)
     LibStub("AceConfig-3.0"):RegisterOptionsTable("RollWatcher", options)
     LibStub("AceConfigDialog-3.0"):AddToBlizOptions("RollWatcher")
     self:RegisterChatCommand("rwt", "TestItemList")
     self:RegisterChatCommand("rollwatcher", function() InterfaceOptionsFrame_OpenToCategory("RollWatcher") end)
-    self:SetupFrames()
 end
 
 function RollWatcher:OnEnable()
@@ -132,11 +108,12 @@ function RollWatcher:OnEnable()
     self:RegisterEvent("START_LOOT_ROLL")
     self:RegisterEvent("CHAT_MSG_LOOT")
     self:ScheduleRepeatingTimer("ExpireItems", 1)
-    self:UpdateReport()
 end
 
 function RollWatcher:OnDisable()
-    report:hide()
+    if self.tooltip then
+        self:HideReportFrame()
+    end
 end
 
 function RollWatcher:ToggleDisplay()
@@ -148,9 +125,14 @@ function RollWatcher:ToggleDisplay()
 end
 
 function RollWatcher:PARTY_MEMBERS_CHANGED()
-    self:ResizeFrames()
+    if self.tooltip then
+        self:RefreshTooltip()
+    end
 end
 
+
+
+-- Chat scanning and loot recording
 function RollWatcher:START_LOOT_ROLL(event, rollid)
     local texture, name, count, quality = GetLootRollItemInfo(rollid)
     local link = GetLootRollItemLink(rollid)
@@ -357,197 +339,9 @@ function RollWatcher:RecordReceived(link)
     self:UpdateReport()
 end
 
-function RollWatcher:SetupFrames()
-    local f = GameFontNormal:GetFont()
-    local spacing = 5
 
-    -- Create outer frame with backdrop
-    report = CreateFrame("Frame", "RollWatcherFrame", UIParent)
-    report:Hide()
-    self:SetupSizes()
-    report:SetToplevel(true)
-    report:SetWidth(report.totalwidth)
-    report:SetHeight(report.totalheight)
-    report:SetScale(self.db.profile.scale)
-    report:EnableMouse(true)
-    report:SetMovable(true)
-    report:RegisterForDrag("LeftButton")
-    report:SetScript("OnDragStart", function() this:StartMoving() end)
-    report:SetScript("OnDragStop", function() this:StopMovingOrSizing() end)
 
-    -- QTip Shiz
-    report:SetScript('OnEnter', anchor_OnEnter)
-    report:SetScript('OnLeave', anchor_OnLeave)
-
-    report:SetBackdrop({
-                                 bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background", tile = true, tileSize = 16,
-                                 edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 16,
-                                 insets = {left = 4, right = 4, top = 4, bottom = 4},
-                             })
-    report:SetBackdropBorderColor(.5, .5, .5)
-    report:SetBackdropColor(0,0,0)
-    report:ClearAllPoints()
-    report:SetPoint("CENTER")
-
-    -- Create player namelist, anchored to outer frame with room at top for icons
-    local namelist = report:CreateFontString(nil, "OVERLAY")
-    namelist:SetFont(f, fontsize)
-    namelist:SetWidth(self.db.profile.namelistwidth)
-    namelist:SetHeight(report.namelistheight)
-    namelist:SetJustifyV("TOP")
-    namelist:SetJustifyH("LEFT")
-    namelist:SetText("")
-    namelist:ClearAllPoints()
-    namelist:SetPoint("TOPLEFT", report, "TOPLEFT", report.spacing, -(report.spacing * 2 + iconheight))
-    report.namelist = namelist
-
-    -- Create invisible frame around choice lists, for anchoring purposes
-    local itemgroup = CreateFrame("Frame", nil, report)
-    itemgroup:SetWidth(self.db.profile.nitems * (self.db.profile.namelistwidth + report.spacing) - report.spacing)
-    itemgroup:SetHeight(report.namelistheight)
-    itemgroup:ClearAllPoints()
-    itemgroup:SetPoint("TOPLEFT", namelist, "TOPRIGHT", report.spacing, 0)
-    report.itemgroup = itemgroup
-
-    -- Create icons and choice lists for each item column
-    report.choices = {}
-    report.icons = {}
-    for i = 1,self.db.profile.nitems do
-        self:SetupItemFrames(i)
-    end
-
-    -- Create text at bottom and page buttons
-    local bottomtext = report:CreateFontString(nil, "OVERLAY")
-    bottomtext:SetFont(f, fontsize)
-    bottomtext:SetWidth(report.bottomtextwidth)
-    bottomtext:SetText("")
-    bottomtext:ClearAllPoints()
-    bottomtext:SetPoint("TOP", itemgroup, "BOTTOM", 0, -report.spacing)
-    report.bottomtext = bottomtext
-
-    local leftbutton = CreateFrame("Button", nil, report)
-    leftbutton:SetWidth(32)
-    leftbutton:SetHeight(32)
-    leftbutton:SetNormalTexture("Interface\\Buttons\\UI-SpellbookIcon-PrevPage-Up")
-    leftbutton:SetPushedTexture("Interface\\Buttons\\UI-SpellbookIcon-PrevPage-Down")
-    leftbutton:SetDisabledTexture("Interface\\Buttons\\UI-SpellbookIcon-PrevPage-Disabled")
-    leftbutton:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
-    leftbutton:ClearAllPoints()
-    leftbutton:SetPoint("RIGHT", bottomtext, "LEFT", -report.spacing, 0)
-    leftbutton:SetScript("OnClick", function() self:PageLeft() end)
-    report.leftbutton = leftbutton
-
-    local rightbutton = CreateFrame("Button", nil, report)
-    rightbutton:SetWidth(32)
-    rightbutton:SetHeight(32)
-    rightbutton:SetNormalTexture("Interface\\Buttons\\UI-SpellbookIcon-NextPage-Up")
-    rightbutton:SetPushedTexture("Interface\\Buttons\\UI-SpellbookIcon-NextPage-Down")
-    rightbutton:SetDisabledTexture("Interface\\Buttons\\UI-SpellbookIcon-NextPage-Disabled")
-    rightbutton:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
-    rightbutton:ClearAllPoints()
-    rightbutton:SetPoint("LEFT", bottomtext, "RIGHT", report.spacing, 0)
-    rightbutton:SetScript("OnClick", function() self:PageRight() end)
-    report.rightbutton = rightbutton
-
-    report.firstitem = 1
-end
-
-function RollWatcher:ResizeFrames()
-    self:SetupSizes()
-    report:SetWidth(report.totalwidth)
-    report:SetHeight(report.totalheight)
-    report.namelist:SetWidth(self.db.profile.namelistwidth)
-    report.namelist:SetHeight(report.namelistheight)
-    report.itemgroup:SetWidth(self.db.profile.nitems * (self.db.profile.namelistwidth + report.spacing) - report.spacing)
-    report.itemgroup:SetHeight(report.namelistheight)
-    report.bottomtext:SetWidth(report.bottomtextwidth)
-    for i = 1, self.db.profile.nitems do
-        if not report.choices[i] then
-            self:SetupItemFrames(i)
-        else
-            local choices = report.choices[i]
-            choices:SetWidth(self.db.profile.namelistwidth)
-            choices:SetHeight(report.namelistheight)
-            choices:ClearAllPoints()
-            choices:SetPoint("TOPLEFT", report.itemgroup, "TOPLEFT", (i - 1) * (self.db.profile.namelistwidth + report.spacing), 0)
-        end
-    end
-    -- Hide any extra item frames we might have
-    for i = self.db.profile.nitems + 1, table.maxn(report.choices) do
-        report.choices[i]:Hide()
-        report.icons[i]:Hide()
-    end
-    self:UpdateReport()
-end
-
-function RollWatcher:SetupItemFrames(i)
-    local f = GameFontNormal:GetFont()
-    local choices = report.itemgroup:CreateFontString(nil, "OVERLAY")
-
-    choices:SetFont(f, fontsize)
-    choices:SetWidth(self.db.profile.namelistwidth)
-    choices:SetHeight(report.namelistheight)
-    choices:SetJustifyV("TOP")
-    choices:SetJustifyH("LEFT")
-    choices:SetText("")
-    choices:ClearAllPoints()
-    choices:SetPoint("TOPLEFT", report.itemgroup, "TOPLEFT", (i - 1) * (self.db.profile.namelistwidth + report.spacing), 0)
-    report.choices[i] = choices
-
-    local icon = CreateFrame("Button", "RollWatcherIcon" .. i, report.itemgroup, "ItemButtonTemplate")
-    icon:ClearAllPoints()
-    icon:SetPoint("BOTTOMLEFT", choices, "TOPLEFT", 0, report.spacing)
-    icon:Hide()
-    icon:SetScript("OnEnter", function() self:IconEntered(i) end)
-    icon:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    icon:SetScript("OnClick", function() self:IconClicked(i) end)
-    report.icons[i] = icon
-end
-
-function RollWatcher:IconEntered(i)
-    local sorted = self:SortRollids()
-    local count = self:CountItems()
-    local ind = report.firstitem + i - 1
-
-    if ind <= count then
-        local rollid = sorted[ind]
-        GameTooltip:SetOwner(report.icons[i], "ANCHOR_RIGHT")
-        GameTooltip:SetHyperlink(items[rollid].link)
-    end
-end
-
-function RollWatcher:IconClicked(i)
-    local sorted = self:SortRollids()
-    local count = self:CountItems()
-    local ind = report.firstitem + i - 1
-
-    if ind <= count then
-        local rollid = sorted[ind]
-        if (IsControlKeyDown()) then
-            items[rollid] = nil
-            self:UpdateReport()
-            self:IconEntered(i)
-        else
-            HandleModifiedItemClick(items[rollid].link)
-        end
-    end
-end
-
--- Compute sizes based on the number of players in the party/raid
-function RollWatcher:SetupSizes()
-    local nplayers = self:GetNumPlayers()
-
-    report.namelistheight = (nplayers + 2) * fontsize + 5 -- font sizes aren't quite integers; leave some wiggle room
-    report.spacing = 10
-    report.totalwidth = report.spacing + (self.db.profile.nitems + 1) * (self.db.profile.namelistwidth + report.spacing)
-    report.totalheight = report.spacing * 4 + iconheight + report.namelistheight + fontsize
-    if self.db.profile.nitems == 1 then
-        report.bottomtextwidth = 10
-    else
-        report.bottomtextwidth = self.db.profile.namelistwidth
-    end
-end
-
+-- Tooltip Information Formatting
 function RollWatcher:PageLeft()
     report.firstitem = report.firstitem - self.db.profile.nitems
     if report.firstitem < 1 then
@@ -671,79 +465,6 @@ function RollWatcher:CountItems()
     return i
 end
 
-function RollWatcher:UpdateReport()
-    if self.tooltip and self.tooltip:IsShown() then
-        self:PopulateReportTooltip()
-    end
-
-    local players = self:GetSortedPlayers()
-
-    -- Place name list into report.namelist
-    local text = ""
-    for _, name in ipairs(players) do
-        text = text .. self:ColorizeName(name) .. "\n"
-    end
-    text = text .. "\nWinner"
-    report.namelist:SetText(text)
-
-    -- Verify that report.firstitem is set reasonably
-    local sorted = self:SortRollids()
-    local count = self:CountItems()
-    if count == 0 then
-        report.firstitem = 1
-    elseif report.firstitem > count then
-        report.firstitem = count
-    end
-
-    -- Fill in each item frame
-    for i = 1, self.db.profile.nitems do
-        local ind = report.firstitem + i - 1
-        if ind <= count then
-            local rollid = sorted[ind]
-            local item = items[rollid]
-
-            SetItemButtonTexture(report.icons[i], item.texture)
-            report.icons[i]:Show()
-            text = ""
-            for _, name in ipairs(players) do
-                text = text .. self:ChoiceText(item.choices[name]) .. self:RollText(item.rolls[name]) .. "\n"
-            end
-            text = text .. "\n" .. self:AssignedText(item)
-            report.choices[i]:SetText(text)
-        else
-            report.icons[i]:Hide()
-            report.choices[i]:SetText("")
-        end
-    end
-
-    -- Set the text at the bottom
-    if self.db.profile.nitems == 1 then
-        report.bottomtext:SetText(tostring(report.firstitem))
-    elseif count == 0 then
-        report.bottomtext:SetText("None")
-    elseif count == 1 or report.firstitem == count then
-        report.bottomtext:SetText(string.format("%d of %d", report.firstitem, count))
-    else
-        local lastitem = report.firstitem + self.db.profile.nitems - 1
-        if (lastitem > count) then
-            lastitem = count
-        end
-        report.bottomtext:SetText(string.format("%d-%d of %d", report.firstitem, lastitem, count))
-    end
-
-    -- Enable or disable the page buttons
-    if report.firstitem > 1 then
-        report.leftbutton:Enable()
-    else
-        report.leftbutton:Disable()
-    end
-    if report.firstitem + self.db.profile.nitems - 1 < count then
-        report.rightbutton:Enable()
-    else
-        report.rightbutton:Disable()
-    end
-end
-
 function RollWatcher:ExpireItems()
     local now = GetTime()
     local update = false
@@ -768,37 +489,16 @@ function RollWatcher:unformat(fmt, msg)
     return a1, a2, a3, a4
 end
 
--- Config option getters and setters
 
+
+-- Config option getters and setters
 function RollWatcher:GetNItems(info)
     return self.db.profile.nitems
 end
 
 function RollWatcher:SetNItems(info, nitems)
     self.db.profile.nitems = nitems
-    if self.tooltip then
-        self:HideReportFrame()
-        self:ShowReportFrame()
-    end
-    self:ResizeFrames()
-end
-
-function RollWatcher:GetNameListWidth(info)
-    return self.db.profile.namelistwidth
-end
-
-function RollWatcher:SetNameListWidth(info, width)
-    self.db.profile.namelistwidth = width
-    self:ResizeFrames()
-end
-
-function RollWatcher:GetWindowScale(info)
-    return self.db.profile.scale
-end
-
-function RollWatcher:SetWindowScale(info, scale)
-    self.db.profile.scale = scale
-    report:SetScale(scale)
+    self:RefreshTooltip()
 end
 
 function RollWatcher:GetExpiry(info)
@@ -893,6 +593,8 @@ function RollWatcher:PopulateReportTooltip()
     -- Verify that report.firstitem is set reasonably
     local sorted = self:SortRollids()
     local count = self:CountItems()
+
+    if not(report.firstitem) then report.firstitem = 1 end
     if count == 0 then
         report.firstitem = 1
     elseif report.firstitem > count then
@@ -977,6 +679,22 @@ function RollWatcher:PopulateReportTooltip()
     end
 end
 
+function RollWatcher:UpdateReport()
+    if self.tooltip and self.tooltip:IsShown() then
+        self:PopulateReportTooltip()
+    end
+end
+
+function RollWatcher:RefreshTooltip()
+    if self.tooltip then
+        self:HideReportFrame()
+        self:ShowReportFrame()
+    end
+end
+
+
+
+-- Unit tests
 function RollWatcher:TestItemList()
     items[1] = {
         texture = "Interface\\Icons\\INV_Weapon_ShortBlade_04",
@@ -999,8 +717,8 @@ function RollWatcher:TestItemList()
         link = "|cff0070dd|Hitem:2169:0:0:0:0:0:0:1016630800:80|h[Buzzer Blade]|h|r",
         assigned = "Matsuri",
         received = 15130,
-        choices = {Emberly = "pass", Matsuri = "need"},
-        rolls = {Emberly = "---", Matsuri = " - 42"}
+        choices = {Shalii = "pass", Matsuri = "need"},
+        rolls = {Shalii = "", Matsuri = " - 42"}
     }
     self:UpdateReport()
 end
