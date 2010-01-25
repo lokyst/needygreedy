@@ -83,7 +83,14 @@ local options = {
             type = "toggle",
             get = "GetDetachedTooltip",
             set = "SetDetachedTooltip",
-        }
+        },
+        displayTextLink = {
+            name = "Display Item Names",
+            desc = "Show the item names as a header",
+            type = "toggle",
+            get = "GetDisplayTextLink",
+            set = "SetDisplayTextLink",
+        },
     }
 }
 
@@ -94,6 +101,7 @@ local defaults = {
         quality = ITEM_QUALITY_EPIC,
         displayIcons = true,
         detachedTooltip = false,
+        displayTextLink = false,
     }
 }
 
@@ -577,6 +585,15 @@ function NeedyGreedy:SetDetachedTooltip(info, detachedTooltip)
     end
 end
 
+function NeedyGreedy:GetDisplayTextLink(info)
+    return self.db.profile.displayTextLink
+end
+
+function NeedyGreedy:SetDisplayTextLink(info, displayTextLink)
+    self.db.profile.displayTextLink = displayTextLink
+    self:UpdateReport()
+end
+
 
 
 -- Detachable QTip Frames
@@ -691,25 +708,27 @@ function NeedyGreedy:PopulateReportTooltip()
     end
 
     -- Now add item link names
-    headerline, _ = self.tooltip:AddLine("")
-    for i = 1, nItems do
-        local index = report.firstItem + i - 1
-        local text = ""
-        local item = nil
-        if index <= count then
-            local rollID = sorted[index]
-            item = items[rollID]
-            text= item.link
-        end
-        self.tooltip:SetCell(headerline, i + 1, text, nil, nil, nil, nil, nil, nil, nil, 60)
-        if item then
-            self.tooltip:SetCellScript(headerline, i + 1, "OnEnter", function()
-                GameTooltip:SetOwner(self.tooltip, "ANCHOR_RIGHT")
-                GameTooltip:SetHyperlink(item.link)
-            end )
-            self.tooltip:SetCellScript(headerline, i + 1, "OnLeave", function()
-                GameTooltip:Hide()
-            end )
+    if self.db.profile.displayTextLink then
+        headerline, _ = self.tooltip:AddLine("")
+        for i = 1, nItems do
+            local index = report.firstItem + i - 1
+            local text = ""
+            local item = nil
+            if index <= count then
+                local rollID = sorted[index]
+                item = items[rollID]
+                text= item.link
+            end
+            self.tooltip:SetCell(headerline, i + 1, text, nil, nil, nil, nil, nil, nil, nil, 60)
+            if item then
+                self.tooltip:SetCellScript(headerline, i + 1, "OnEnter", function()
+                    GameTooltip:SetOwner(self.tooltip, "ANCHOR_RIGHT")
+                    GameTooltip:SetHyperlink(item.link)
+                end )
+                self.tooltip:SetCellScript(headerline, i + 1, "OnLeave", function()
+                    GameTooltip:Hide()
+                end )
+            end
         end
     end
 
