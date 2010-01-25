@@ -1,5 +1,7 @@
 NeedyGreedy = LibStub("AceAddon-3.0"):NewAddon("NeedyGreedy", "AceEvent-3.0", "AceTimer-3.0", "AceConsole-3.0")
 
+local L = LibStub("AceLocale-3.0"):GetLocale("NeedyGreedy", true)
+
 LibStub:GetLibrary("LibDataBroker-1.1"):NewDataObject("NeedyGreedy", {
     type = "launcher",
     label = "Needy Greedy",
@@ -32,14 +34,14 @@ local report = {}
 local items = {}
 
 local options = {
-    name = "NeedyGreedy",
-    desc = "Displays a table of items and the roll choices players have made on them",
+    name = L["NeedyGreedy"],
+    desc = L["Displays a table of items and the roll choices players have made on them"],
     handler = NeedyGreedy,
     type = "group",
     args = {
         nItems = {
-            name = "Display Items",
-            desc = "Number of item columns in the display window",
+            name = L["Display Items"],
+            desc = L["Number of item columns in the display window"],
             type = "range",
             min = 1,
             max = 10,
@@ -48,8 +50,8 @@ local options = {
             set = "SetNItems"
         },
         expiry = {
-            name = "Expiry Time",
-            desc = "Minutes after item is received before it is removed from display (0 = forever)",
+            name = L["Expiry Time"],
+            desc = L["Minutes after item is received before it is removed from display (0 = forever)"],
             type = "range",
             min = 0,
             max = 60,
@@ -58,8 +60,8 @@ local options = {
             set = "SetExpiry"
         },
         quality = {
-            name = "Minimum Quality",
-            desc = "Minimum quality of item to be displayed",
+            name = L["Minimum Quality"],
+            desc = L["Minimum quality of item to be displayed"],
             type = "select",
             values = {
                 [ITEM_QUALITY_UNCOMMON] = ITEM_QUALITY2_DESC,
@@ -71,22 +73,22 @@ local options = {
             set = "SetQuality"
         },
         displayIcons = {
-            name = "Display Icons",
-            desc = "Display icons for rolls types instead of text strings",
+            name = L["Display Icons"],
+            desc = L["Display icons for rolls types instead of text strings"],
             type = "toggle",
             get = "GetDisplayIcons",
             set = "SetDisplayIcons",
         },
         detachedTooltip = {
-            name = "Detach Tooltip",
-            desc = "Display the roll information in a standalone window",
+            name = L["Detach Tooltip"],
+            desc = L["Display the roll information in a standalone window"],
             type = "toggle",
             get = "GetDetachedTooltip",
             set = "SetDetachedTooltip",
         },
         displayTextLink = {
-            name = "Display Item Names",
-            desc = "Show the item names as a header",
+            name = L["Display Item Names"],
+            desc = L["Show the item names as a header"],
             type = "toggle",
             get = "GetDisplayTextLink",
             set = "SetDisplayTextLink",
@@ -138,7 +140,7 @@ function NeedyGreedy:OnInitialize()
     options.args.profiles = LibStub("AceDBOptions-3.0"):GetOptionsTable(self.db)
     LibStub("AceConfig-3.0"):RegisterOptionsTable("NeedyGreedy", options)
     LibStub("AceConfigDialog-3.0"):AddToBlizOptions("NeedyGreedy")
-    self:RegisterChatCommand("ngt", "TestItemList")
+    -- self:RegisterChatCommand("ngt", "TestItemList")
     self:RegisterChatCommand("needygreedy", function() InterfaceOptionsFrame_OpenToCategory("NeedyGreedy") end)
 end
 
@@ -812,15 +814,15 @@ function NeedyGreedy:AddPagerArrows(tooltip)
     if nItems == 1 then
         pageText = tostring(report.firstItem)
     elseif count == 0 then
-        pageText = "None"
+        pageText = L["None"]
     elseif count == 1 or report.firstItem == count then
-        pageText = string.format("%d of %d", report.firstItem, count)
+        pageText = string.format(L["%d of %d"], report.firstItem, count)
     else
         local lastitem = report.firstItem + nItems - 1
         if (lastitem > count) then
             lastitem = count
         end
-        pageText = string.format("%d-%d of %d", report.firstItem, lastitem, count)
+        pageText = string.format(L["%d-%d of %d"], report.firstItem, lastitem, count)
     end
 
     tooltip:SetCell(lineNum, colNum - 1, yC .. pageText)
@@ -829,9 +831,9 @@ end
 function NeedyGreedy:AddInfoText(tooltip)
     local helpText = ""
     if self.db.profile.detachedTooltip then
-        helpText = helpText .. eC .. "Click|r " .. gC .. "to hide/show detached tooltip\n|r"
+        helpText = helpText .. eC .. L["Click"] .. "|r " .. gC .. L["to hide/show detached tooltip"] .. "|r"
     end
-    helpText = helpText .. eC .. "Right-Click|r " .. gC .. "to open configuration menu|r"
+    -- helpText = helpText "\n" .. eC .. "Right-Click|r " .. gC .. "to open configuration menu|r"
     tooltip:AddLine("")
     local lineNum = tooltip:AddLine()
     tooltip:SetCell(lineNum, 1, helpText, nil, tooltip:GetColumnCount())
@@ -874,6 +876,7 @@ end
 
 
 -- Unit tests
+--[[
 function NeedyGreedy:TestItemList()
     items[1] = {
         texture = "Interface\\Icons\\INV_Weapon_ShortBlade_04",
@@ -901,3 +904,4 @@ function NeedyGreedy:TestItemList()
     }
     self:UpdateReport()
 end
+--]]

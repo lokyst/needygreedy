@@ -1,12 +1,12 @@
 ## Interface: 30300
 ## Title: NeedyGreedy
 ## Notes: Displays who has rolled need/greed/pass on what loot items
-## Version: 1.0
-## Author: Marco, lokyst
-
+## Version: 0.9
+## Author: lokyst, Marco
 ## SavedVariables: NeedyGreedyDB
-## OptionalDeps: Blizzard_DebugTools
+## OptionalDeps:
+
+Localization\enUS.lua
 
 embeds.xml
-
 NeedyGreedy.lua
