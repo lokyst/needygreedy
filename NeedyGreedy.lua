@@ -1,11 +1,31 @@
 NeedyGreedy = LibStub("AceAddon-3.0"):NewAddon("NeedyGreedy", "AceEvent-3.0", "AceTimer-3.0", "AceConsole-3.0")
 
 LibStub:GetLibrary("LibDataBroker-1.1"):NewDataObject("NeedyGreedy", {
-          type = "launcher",
-          icon = "Interface\\Buttons\\UI-GroupLoot-Dice-Up",
-          OnClick = function(clickedframe, button)
-                     NeedyGreedy:ToggleDisplay()
-          end,
+    type = "launcher",
+    label = "Needy Greedy",
+    icon = "Interface\\Buttons\\UI-GroupLoot-Dice-Up",
+    OnClick = function(frame, button)
+        local detached = NeedyGreedy.db.profile.detachedTooltip
+        if button == "RightButton" then
+            InterfaceOptionsFrame_OpenToCategory("NeedyGreedy")
+        elseif detached then
+            NeedyGreedy:ToggleDisplay()
+        end
+    end,
+    OnEnter = function(frame)
+        if not NeedyGreedy.db.profile.detachedTooltip then
+            NeedyGreedy:ShowReportFrame(frame)
+        else
+            NeedyGreedy:ShowInfoTooltip(frame)
+        end
+    end,
+    OnLeave = function()
+        if not NeedyGreedy.db.profile.detachedTooltip then
+            NeedyGreedy:HideReportFrame()
+        else
+            NeedyGreedy:HideInfoTooltip(frame)
+        end
+    end,
 })
 
 local report = {}
@@ -17,7 +37,7 @@ local options = {
     handler = NeedyGreedy,
     type = "group",
     args = {
-        nitems = {
+        nItems = {
             name = "Display Items",
             desc = "Number of item columns in the display window",
             type = "range",
@@ -56,18 +76,24 @@ local options = {
             type = "toggle",
             get = "GetDisplayIcons",
             set = "SetDisplayIcons",
+        },
+        detachedTooltip = {
+            name = "Detach Tooltip",
+            desc = "Display the roll information in a standalone window",
+            type = "toggle",
+            get = "GetDetachedTooltip",
+            set = "SetDetachedTooltip",
         }
     }
 }
 
 local defaults = {
     profile = {
-        nitems = 2,
-        namelistwidth = 100,
-        scale = 1,
+        nItems = 2,
         expiry = 5,
         quality = ITEM_QUALITY_EPIC,
-        displayIcons = false,
+        displayIcons = true,
+        detachedTooltip = false,
     }
 }
 
@@ -90,6 +116,11 @@ local NEEDYGREEDY_CHOICE = {
         ["icon"] = "|TInterface\\Buttons\\UI-GroupLoot-DE-Up:" .. iconSize .. "|t",
     }
 }
+
+-- Funky colors for text strings
+local yC = "|cffFFCC00" -- Golden
+local eC = "|cffEDA55F" -- Orange
+local gC = "|cff00FF00" -- Green
 
 function NeedyGreedy:OnInitialize()
     self.db = LibStub("AceDB-3.0"):New("NeedyGreedyDB", defaults, true)
@@ -343,7 +374,7 @@ end
 
 -- Tooltip Information Formatting
 function NeedyGreedy:PageLeft()
-    report.firstItem = report.firstItem - self.db.profile.nitems
+    report.firstItem = report.firstItem - self.db.profile.nItems
     if report.firstItem < 1 then
         report.firstItem = 1
     end
@@ -352,7 +383,7 @@ end
 
 function NeedyGreedy:PageRight()
     local count = NeedyGreedy:CountItems()
-    report.firstItem = report.firstItem + self.db.profile.nitems
+    report.firstItem = report.firstItem + self.db.profile.nItems
     if count == 0 then
         report.firstItem = 1
     elseif report.firstItem > count then
@@ -493,11 +524,11 @@ end
 
 -- Config option getters and setters
 function NeedyGreedy:GetNItems(info)
-    return self.db.profile.nitems
+    return self.db.profile.nItems
 end
 
-function NeedyGreedy:SetNItems(info, nitems)
-    self.db.profile.nitems = nitems
+function NeedyGreedy:SetNItems(info, nItems)
+    self.db.profile.nItems = nItems
     self:RefreshTooltip()
 end
 
@@ -527,68 +558,99 @@ function NeedyGreedy:SetDisplayIcons(info, displayIcons)
     self:UpdateReport()
 end
 
+function NeedyGreedy:GetDetachedTooltip(info)
+    return self.db.profile.detachedTooltip
+end
+
+function NeedyGreedy:SetDetachedTooltip(info, detachedTooltip)
+    self.db.profile.detachedTooltip = detachedTooltip
+    if detachedTooltip then
+        self:ShowReportFrame()
+    else
+        self:HideReportFrame()
+        -- Return to page one
+        report.firstItem = 1
+    end
+end
+
+
 
 -- Detachable QTip Frames
 local LibQTip = LibStub('LibQTip-1.0')
 
-function NeedyGreedy:ShowReportFrame()
+function NeedyGreedy:ShowReportFrame(frame)
     -- Acquire a tooltip
     self.tooltip = LibQTip:Acquire("NeedyGreedyReport", 1, "LEFT")
+
     -- Add columns here because tooltip:Clear() preserves columns
-    for i = 1, self.db.profile.nitems do
+    for i = 1, self.db.profile.nItems do
         self.tooltip:AddColumn("LEFT")
     end
-    -- Add two columns for left and right dialog buttons
-    self.tooltip:AddColumn("RIGHT")
-    self.tooltip:AddColumn("LEFT")
 
+    -- Add two columns for left and right buttons if detached
+    if self.db.profile.detachedTooltip then
+        self.tooltip:AddColumn("RIGHT")
+        self.tooltip:AddColumn("LEFT")
+    end
+
+    -- Fill in the info
     self:PopulateReportTooltip()
 
-    -- To make tooltip detached
-    self.tooltip:ClearAllPoints()
-    self.tooltip:SetFrameStrata("FULLSCREEN")
-    self.tooltip:EnableMouse(true)
-    self.tooltip:SetResizable(true)
-    self.tooltip:SetFrameLevel(1)
-    self.tooltip:SetMovable(true)
-    self.tooltip:SetClampedToScreen(true)
+    if self.db.profile.detachedTooltip then
+        -- To make tooltip detached
+        self.tooltip:ClearAllPoints()
+        self.tooltip:SetFrameStrata("FULLSCREEN")
+        self.tooltip:EnableMouse(true)
+        self.tooltip:SetResizable(true)
+        self.tooltip:SetFrameLevel(1)
+        self.tooltip:SetMovable(true)
+        self.tooltip:SetClampedToScreen(true)
 
-    if not self.db.profile.reportFramePos then
-        self.db.profile.reportFramePos = {
-            anchor1 = "CENTER",
-            anchor2 = "CENTER",
-            x = 0,
-            y = 0
-        }
+        if not self.db.profile.reportFramePos then
+            self.db.profile.reportFramePos = {
+                anchor1 = "CENTER",
+                anchor2 = "CENTER",
+                x = 0,
+                y = 0
+            }
+        end
+        self.tooltip:SetPoint(self.db.profile.reportFramePos.anchor1, nil, self.db.profile.reportFramePos.anchor2,
+            self.db.profile.reportFramePos.x, self.db.profile.reportFramePos.y)
+
+        -- Make it move !
+        self.tooltip:SetScript("OnMouseDown", function() self.tooltip:StartMoving() end)
+        self.tooltip:SetScript("OnMouseUp", function()
+            -- Make it remember
+            self.tooltip:StopMovingOrSizing()
+            local anchor1, _, anchor2, x, y = self.tooltip:GetPoint()
+            self.db.profile.reportFramePos.anchor1 = anchor1
+            self.db.profile.reportFramePos.anchor2 = anchor2
+            self.db.profile.reportFramePos.x = x
+            self.db.profile.reportFramePos.y = y
+        end)
+
+    else
+        if frame then self.tooltip:SmartAnchorTo(frame) end
     end
-    self.tooltip:SetPoint(self.db.profile.reportFramePos.anchor1, nil, self.db.profile.reportFramePos.anchor2, self.db.profile.reportFramePos.x, self.db.profile.reportFramePos.y)
-
-    -- Make it move !
-    self.tooltip:SetScript("OnMouseDown", function() self.tooltip:StartMoving() end)
-    self.tooltip:SetScript("OnMouseUp", function()
-        -- Make it remember
-        self.tooltip:StopMovingOrSizing()
-        local anchor1, _, anchor2, x, y = self.tooltip:GetPoint()
-        self.db.profile.reportFramePos.anchor1 = anchor1
-        self.db.profile.reportFramePos.anchor2 = anchor2
-        self.db.profile.reportFramePos.x = x
-        self.db.profile.reportFramePos.y = y
-    end)
 
     -- Show it, et voilà !
     self.tooltip:Show()
 end
 
 function NeedyGreedy:HideReportFrame()
-    self.tooltip:Hide()
-    LibQTip:Release(self.tooltip)
-    self.tooltip = nil
+    if self.tooltip then
+        self.tooltip:Hide()
+        LibQTip:Release(self.tooltip)
+        self.tooltip = nil
+    end
 end
 
 function NeedyGreedy:PopulateReportTooltip()
-    local nItems = self.db.profile.nitems
+    local nItems = self.db.profile.nItems
     local players = self:GetSortedPlayers()
     self.tooltip:Clear()
+
+    self:AddHeaderText(self.tooltip)
 
     -- Verify that report.firstItem is set reasonably
     local sorted = self:SortRollids()
@@ -601,9 +663,8 @@ function NeedyGreedy:PopulateReportTooltip()
         report.firstItem = count
     end
 
-    -- Create headers
-    local itemHeaders = {"Party"}
-    local headerline = self.tooltip:AddHeader(unpack(itemHeaders))
+    -- Create icon headers
+    local headerline, _ = self.tooltip:AddLine("")
     for i = 1, nItems do
         local index = report.firstItem + i - 1
         local texture = ""
@@ -613,7 +674,7 @@ function NeedyGreedy:PopulateReportTooltip()
             item = items[rollID]
             texture = "|T" .. item.texture .. ":40|t"
         end
-        self.tooltip:SetCell(headerline, i + 1, texture, nil, nil, nil, nil, nil, nil, nil, 60)
+        self.tooltip:SetCell(headerline, i + 1, texture, nil, "CENTER", nil, nil, nil, nil, nil, 60)
         if item then
             self.tooltip:SetCellScript(headerline, i + 1, "OnEnter", function()
                 GameTooltip:SetOwner(self.tooltip, "ANCHOR_RIGHT")
@@ -625,7 +686,28 @@ function NeedyGreedy:PopulateReportTooltip()
         end
     end
 
-    self.tooltip:AddSeparator()
+    -- Now add item link names
+    headerline, _ = self.tooltip:AddLine("")
+    for i = 1, nItems do
+        local index = report.firstItem + i - 1
+        local text = ""
+        local item = nil
+        if index <= count then
+            local rollID = sorted[index]
+            item = items[rollID]
+            text= item.link
+        end
+        self.tooltip:SetCell(headerline, i + 1, text, nil, nil, nil, nil, nil, nil, nil, 60)
+        if item then
+            self.tooltip:SetCellScript(headerline, i + 1, "OnEnter", function()
+                GameTooltip:SetOwner(self.tooltip, "ANCHOR_RIGHT")
+                GameTooltip:SetHyperlink(item.link)
+            end )
+            self.tooltip:SetCellScript(headerline, i + 1, "OnLeave", function()
+                GameTooltip:Hide()
+            end )
+        end
+    end
 
     -- Create table with party names and their rolls
     for i, name in ipairs(players) do
@@ -647,7 +729,7 @@ function NeedyGreedy:PopulateReportTooltip()
     self.tooltip:AddSeparator()
 
     -- Display winner
-    local winnerTable = {"Winner"}
+    local winnerTable = {yC .. "Winner|r"}
     for i = 1, nItems do
         local index = report.firstItem + i - 1
         if index <= count then
@@ -658,25 +740,68 @@ function NeedyGreedy:PopulateReportTooltip()
     end
     self.tooltip:AddLine(unpack(winnerTable))
 
-    -- Display left and right arrows
-    local arrowTable = {""}
-    for i = 1, nItems do
-        table.insert(arrowTable, "")
+    -- Display left and right arrows if frame is detached
+    if self.db.profile.detachedTooltip then
+        self:AddPagerArrows(self.tooltip)
+    else
+        self:AddInfoText(self.tooltip)
     end
-    local lineNum, _ = self.tooltip:AddLine(unpack(arrowTable))
+end
+
+function NeedyGreedy:AddHeaderText(tooltip)
+    tooltip:AddHeader(yC .. "NeedyGreedy|r")
+    tooltip:AddLine("")
+end
+
+function NeedyGreedy:AddPagerArrows(tooltip)
+    local nItems = self.db.profile.nItems
+    local count = self:CountItems()
+
+    local lineNum, _ = tooltip:AddLine("")
     local colNum = nItems + 2
+
     if report.firstItem > 1 then
-        self.tooltip:SetCell(lineNum, colNum, "|TInterface\\Buttons\\UI-SpellbookIcon-PrevPage-Up:" .. iconSize .. "|t")
-        self.tooltip:SetCellScript(lineNum, colNum, "OnMouseUp", function() self:PageLeft() end)
+        tooltip:SetCell(lineNum, colNum, "|TInterface\\Buttons\\UI-SpellbookIcon-PrevPage-Up:" .. iconSize .. "|t")
+        tooltip:SetCellScript(lineNum, colNum, "OnMouseUp", function() self:PageLeft() end)
     else
-        self.tooltip:SetCell(lineNum, colNum, "|TInterface\\Buttons\\UI-SpellbookIcon-PrevPage-Disabled:" .. iconSize .. "|t")
+        tooltip:SetCell(lineNum, colNum, "|TInterface\\Buttons\\UI-SpellbookIcon-PrevPage-Disabled:" .. iconSize .. "|t")
     end
+
     if report.firstItem + nItems - 1 < count then
-        self.tooltip:SetCell(lineNum, colNum + 1, "|TInterface\\Buttons\\UI-SpellbookIcon-NextPage-Up:" .. iconSize .. "|t")
-        self.tooltip:SetCellScript(lineNum, colNum + 1, "OnMouseUp", function() self:PageRight() end)
+        tooltip:SetCell(lineNum, colNum + 1, "|TInterface\\Buttons\\UI-SpellbookIcon-NextPage-Up:" .. iconSize .. "|t")
+        tooltip:SetCellScript(lineNum, colNum + 1, "OnMouseUp", function() self:PageRight() end)
     else
-        self.tooltip:SetCell(lineNum, colNum + 1, "|TInterface\\Buttons\\UI-SpellbookIcon-NextPage-Disabled:" .. iconSize .. "|t")
+        tooltip:SetCell(lineNum, colNum + 1, "|TInterface\\Buttons\\UI-SpellbookIcon-NextPage-Disabled:" .. iconSize .. "|t")
     end
+
+    -- Set the page # text
+    local pageText = ""
+    if nItems == 1 then
+        pageText = tostring(report.firstItem)
+    elseif count == 0 then
+        pageText = "None"
+    elseif count == 1 or report.firstItem == count then
+        pageText = string.format("%d of %d", report.firstItem, count)
+    else
+        local lastitem = report.firstItem + nItems - 1
+        if (lastitem > count) then
+            lastitem = count
+        end
+        pageText = string.format("%d-%d of %d", report.firstItem, lastitem, count)
+    end
+
+    tooltip:SetCell(lineNum, colNum - 1, yC .. pageText)
+end
+
+function NeedyGreedy:AddInfoText(tooltip)
+    local helpText = ""
+    if self.db.profile.detachedTooltip then
+        helpText = helpText .. eC .. "Click|r " .. gC .. "to hide/show detached tooltip\n|r"
+    end
+    helpText = helpText .. eC .. "Right-Click|r " .. gC .. "to open configuration menu|r"
+    tooltip:AddLine("")
+    local lineNum = tooltip:AddLine()
+    tooltip:SetCell(lineNum, 1, helpText, nil, tooltip:GetColumnCount())
 end
 
 function NeedyGreedy:UpdateReport()
@@ -692,6 +817,27 @@ function NeedyGreedy:RefreshTooltip()
     end
 end
 
+function NeedyGreedy:ShowInfoTooltip(frame)
+    -- Acquire a tooltip
+    self.infoTooltip = LibQTip:Acquire("NeedyGreedyInfo", 1, "LEFT")
+
+    -- Fill in the info
+    self:AddHeaderText(self.infoTooltip)
+    self:AddInfoText(self.infoTooltip)
+
+    self.infoTooltip:SmartAnchorTo(frame)
+
+    -- Show it, et voilà !
+    self.infoTooltip:Show()
+end
+
+function NeedyGreedy:HideInfoTooltip()
+    if self.infoTooltip then
+        self.infoTooltip:Hide()
+        LibQTip:Release(self.infoTooltip)
+        self.infoTooltip = nil
+    end
+end
 
 
 -- Unit tests
@@ -716,7 +862,7 @@ function NeedyGreedy:TestItemList()
         texture = "Interface\\Icons\\INV_Weapon_ShortBlade_06",
         link = "|cff0070dd|Hitem:2169:0:0:0:0:0:0:1016630800:80|h[Buzzer Blade]|h|r",
         assigned = "Matsuri",
-        received = 15130,
+        received = GetTime(),
         choices = {Shalii = "pass", Matsuri = "need"},
         rolls = {Shalii = "", Matsuri = " - 42"}
     }
