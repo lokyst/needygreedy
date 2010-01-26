@@ -2,7 +2,7 @@ NeedyGreedy = LibStub("AceAddon-3.0"):NewAddon("NeedyGreedy", "AceEvent-3.0", "A
 
 local L = LibStub("AceLocale-3.0"):GetLocale("NeedyGreedy", true)
 
-LibStub:GetLibrary("LibDataBroker-1.1"):NewDataObject("NeedyGreedy", {
+local NeedyGreedyLDB = LibStub("LibDataBroker-1.1"):NewDataObject("NeedyGreedy", {
     type = "launcher",
     label = "Needy Greedy",
     icon = "Interface\\Buttons\\UI-GroupLoot-Dice-Up",
@@ -30,6 +30,8 @@ LibStub:GetLibrary("LibDataBroker-1.1"):NewDataObject("NeedyGreedy", {
     end,
 })
 
+local ngDBIcon = LibStub("LibDBIcon-1.0")
+
 local report = {}
 local items = {}
 
@@ -43,6 +45,7 @@ local options = {
             name = L["Display Items"],
             desc = L["Number of item columns in the display window"],
             type = "range",
+            order = 50,
             min = 1,
             max = 10,
             step = 1,
@@ -53,6 +56,7 @@ local options = {
             name = L["Expiry Time"],
             desc = L["Minutes after item is received before it is removed from display (0 = forever)"],
             type = "range",
+            order = 60,
             min = 0,
             max = 60,
             step = 1,
@@ -63,6 +67,7 @@ local options = {
             name = L["Minimum Quality"],
             desc = L["Minimum quality of item to be displayed"],
             type = "select",
+            order = 70,
             values = {
                 [ITEM_QUALITY_UNCOMMON] = ITEM_QUALITY2_DESC,
                 [ITEM_QUALITY_RARE] = ITEM_QUALITY3_DESC,
@@ -73,9 +78,10 @@ local options = {
             set = "SetQuality"
         },
         displayIcons = {
-            name = L["Display Icons"],
-            desc = L["Display icons for rolls types instead of text strings"],
+            name = L["Graphical Display"],
+            desc = L["Display icons for rolls types instead of text"],
             type = "toggle",
+            order = 20,
             get = "GetDisplayIcons",
             set = "SetDisplayIcons",
         },
@@ -83,15 +89,25 @@ local options = {
             name = L["Detach Tooltip"],
             desc = L["Display the roll information in a standalone window"],
             type = "toggle",
+            order = 10,
             get = "GetDetachedTooltip",
             set = "SetDetachedTooltip",
         },
         displayTextLink = {
-            name = L["Display Item Names"],
-            desc = L["Show the item names as a header"],
+            name = L["Item Names"],
+            desc = L["Toggle the display of the item name in the header"],
+            order = 30,
             type = "toggle",
             get = "GetDisplayTextLink",
             set = "SetDisplayTextLink",
+        },
+        hideMinimapIcon = {
+            name = L["Minimap Icon"],
+            desc = L["Toggle the display of the minimap icon"],
+            type = "toggle",
+            order = 40,
+            get = "GetHideMinimapIcon",
+            set = "SetHideMinimapIcon",
         },
     }
 }
@@ -104,6 +120,8 @@ local defaults = {
         displayIcons = true,
         detachedTooltip = false,
         displayTextLink = false,
+        displayDetached = false,
+        minimap = { hide = false },
     }
 }
 
@@ -142,6 +160,11 @@ function NeedyGreedy:OnInitialize()
     LibStub("AceConfigDialog-3.0"):AddToBlizOptions("NeedyGreedy")
     -- self:RegisterChatCommand("ngt", "TestItemList")
     self:RegisterChatCommand("needygreedy", function() InterfaceOptionsFrame_OpenToCategory("NeedyGreedy") end)
+
+    self:RegisterEvent("PLAYER_ENTERING_WORLD")
+
+    -- Register the minimap icon
+    ngDBIcon:Register("NeedyGreedy", NeedyGreedyLDB, self.db.profile.minimap)
 end
 
 function NeedyGreedy:OnEnable()
@@ -149,6 +172,12 @@ function NeedyGreedy:OnEnable()
     self:RegisterEvent("START_LOOT_ROLL")
     self:RegisterEvent("CHAT_MSG_LOOT")
     self:ScheduleRepeatingTimer("ExpireItems", 1)
+end
+
+function NeedyGreedy:PLAYER_ENTERING_WORLD()
+    if self.db.profile.displayDetached then
+        self:ShowReportFrame()
+    end
 end
 
 function NeedyGreedy:OnDisable()
@@ -160,8 +189,10 @@ end
 function NeedyGreedy:ToggleDisplay()
     if self.tooltip then
         self:HideReportFrame()
+        self.db.profile.displayDetached = false
     else
         self:ShowReportFrame()
+        self.db.profile.displayDetached = true
     end
 end
 
@@ -579,8 +610,10 @@ end
 function NeedyGreedy:SetDetachedTooltip(info, detachedTooltip)
     self.db.profile.detachedTooltip = detachedTooltip
     if detachedTooltip then
+        self.db.profile.displayDetached = true
         self:ShowReportFrame()
     else
+        self.db.profile.displayDetached = false
         self:HideReportFrame()
         -- Return to page one
         report.firstItem = 1
@@ -594,6 +627,19 @@ end
 function NeedyGreedy:SetDisplayTextLink(info, displayTextLink)
     self.db.profile.displayTextLink = displayTextLink
     self:UpdateReport()
+end
+
+function NeedyGreedy:GetHideMinimapIcon(info)
+    return not self.db.profile.minimap.hide
+end
+
+function NeedyGreedy:SetHideMinimapIcon(info, hideMinimapIcon)
+    self.db.profile.minimap.hide = not hideMinimapIcon
+    if self.db.profile.minimap.hide then
+        ngDBIcon:Hide("NeedyGreedy")
+    else
+        ngDBIcon:Show("NeedyGreedy")
+    end
 end
 
 
