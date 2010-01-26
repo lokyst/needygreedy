@@ -25,5 +25,7 @@ L["Minimap Icon"] = true
 L["Toggle the display of the minimap icon"] = true
 L["Shift-Click"] = true
 L["to attach/detach tooltip"] = true
+L["Filter Loot Messages"] = true
+L["Enable filtering of loot roll messages"] = true
 
 end

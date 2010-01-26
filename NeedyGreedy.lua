@@ -2,6 +2,7 @@ NeedyGreedy = LibStub("AceAddon-3.0"):NewAddon("NeedyGreedy", "AceEvent-3.0", "A
 
 local L = LibStub("AceLocale-3.0"):GetLocale("NeedyGreedy", true)
 
+-- Set up DataBroker object
 local NeedyGreedyLDB = LibStub("LibDataBroker-1.1"):NewDataObject("NeedyGreedy", {
     type = "launcher",
     label = "Needy Greedy",
@@ -30,12 +31,12 @@ local NeedyGreedyLDB = LibStub("LibDataBroker-1.1"):NewDataObject("NeedyGreedy",
         NeedyGreedy:HideDBTooltip()
     end,
 })
-
 local ngDBIcon = LibStub("LibDBIcon-1.0")
 
 local report = {}
 local items = {}
 
+-- Set up configuration window
 local options = {
     name = L["NeedyGreedy"],
     desc = L["Displays a table of items and the roll choices players have made on them"],
@@ -110,9 +111,18 @@ local options = {
             get = "GetHideMinimapIcon",
             set = "SetHideMinimapIcon",
         },
+        filterLootMsgs = {
+            name = L["Filter Loot Messages"],
+            desc = L["Enable filtering of loot roll messages"],
+            type = "toggle",
+            order = 35,
+            get = "GetFilterLootMsgs",
+            set = "SetFilterLootMsgs",
+        },
     }
 }
 
+-- Set profile defaults
 local defaults = {
     profile = {
         nItems = 2,
@@ -123,9 +133,11 @@ local defaults = {
         displayTextLink = false,
         displayDetached = false,
         minimap = { hide = false },
+        filterLootMsgs = false,
     }
 }
 
+-- Icon textures for Need/Greed/Pass/DE
 local iconSize = 27
 local NEEDYGREEDY_CHOICE = {
     ["need"] = {
@@ -151,6 +163,9 @@ local yC = "|cffFFCC00" -- Golden
 local eC = "|cffEDA55F" -- Orange
 local gC = "|cff00FF00" -- Green
 
+
+
+-- Event handling functions
 function NeedyGreedy:OnInitialize()
     self.db = LibStub("AceDB-3.0"):New("NeedyGreedyDB", defaults, true)
     self.db.RegisterCallback(self, "OnProfileChanged", "RefreshTooltip")
@@ -163,8 +178,6 @@ function NeedyGreedy:OnInitialize()
     -- self:RegisterChatCommand("ngt", "TestItemList")
     -- self.items = items
 
-    self:RegisterEvent("PLAYER_ENTERING_WORLD")
-
     -- Register the minimap icon
     ngDBIcon:Register("NeedyGreedy", NeedyGreedyLDB, self.db.profile.minimap)
 end
@@ -174,28 +187,29 @@ function NeedyGreedy:OnEnable()
     self:RegisterEvent("START_LOOT_ROLL")
     self:RegisterEvent("CHAT_MSG_LOOT")
     self:ScheduleRepeatingTimer("ExpireItems", 1)
+
+    -- Delay frame display so that player does not show as offline
+    self:RegisterEvent("PLAYER_ENTERING_WORLD")
+
+    -- Set up chat filters
+    if self.db.profile.filterLootMsgs then
+        self:EnableChatFilter()
+    end
+end
+
+function NeedyGreedy:OnDisable()
+    self:HideDetachedTooltip()
+
+    -- Turn off chat filters
+    if self.db.profile.filterLootMsgs then
+        self:DisableChatFilter()
+    end
 end
 
 function NeedyGreedy:PLAYER_ENTERING_WORLD()
     if self.db.profile.displayDetached and self.db.profile.detachedTooltip then
         self:ShowDetachedTooltip()
     end
-end
-
-function NeedyGreedy:OnDisable()
-    self:HideDetachedTooltip()
-end
-
-function NeedyGreedy:ToggleDisplay()
-    if not self.db.profile.detachedTooltip then return end
-
-    if self.db.profile.displayDetached then
-        self:HideDetachedTooltip()
-    else
-        self:ShowDetachedTooltip()
-    end
-
-    self.db.profile.displayDetached = not self.db.profile.displayDetached
 end
 
 function NeedyGreedy:PARTY_MEMBERS_CHANGED()
@@ -642,6 +656,19 @@ function NeedyGreedy:SetHideMinimapIcon(info, hideMinimapIcon)
     end
 end
 
+function NeedyGreedy:GetFilterLootMsgs(info)
+    return self.db.profile.filterLootMsgs
+end
+
+function NeedyGreedy:SetFilterLootMsgs(info, filterLootMsgs)
+    self.db.profile.filterLootMsgs = filterLootMsgs
+    if self.db.profile.filterLootMsgs then
+        self:EnableChatFilter()
+    else
+        self:DisableChatFilter()
+    end
+end
+
 
 
 -- Detachable QTip Frames
@@ -939,6 +966,61 @@ function NeedyGreedy:RefreshTooltip()
         self:ShowDetachedTooltip()
     end
     self:HideDBTooltip()
+end
+
+function NeedyGreedy:ToggleDisplay()
+    if not self.db.profile.detachedTooltip then return end
+
+    if self.db.profile.displayDetached then
+        self:HideDetachedTooltip()
+    else
+        self:ShowDetachedTooltip()
+    end
+
+    self.db.profile.displayDetached = not self.db.profile.displayDetached
+end
+
+
+
+
+-- Chat filter functions
+local filter = function() return true end
+local FILTER_CHAT_LOOT_MSGS = {
+    --"LOOT_ROLL_ALL_PASSED",
+    "LOOT_ROLL_DISENCHANT",
+    "LOOT_ROLL_DISENCHANT_SELF",
+    "LOOT_ROLL_GREED",
+    "LOOT_ROLL_GREED_SELF",
+    "LOOT_ROLL_NEED",
+    "LOOT_ROLL_NEED_SELF",
+    "LOOT_ROLL_PASSED",
+    "LOOT_ROLL_PASSED_AUTO",
+    "LOOT_ROLL_PASSED_AUTO_FEMALE",
+    "LOOT_ROLL_PASSED_SELF",
+    "LOOT_ROLL_PASSED_SELF_AUTO",
+    "LOOT_ROLL_ROLLED_DE",
+    "LOOT_ROLL_ROLLED_GREED",
+    "LOOT_ROLL_ROLLED_NEED",
+    --"LOOT_ROLL_WON",
+    --"LOOT_ROLL_YOU_WON",
+    --"LOOT_ITEM",
+    --"LOOT_ITEM_MULTIPLE",
+    --"LOOT_ITEM_PUSHED_SELF",
+    --"LOOT_ITEM_PUSHED_SELF_MULTIPLE",
+    --"LOOT_ITEM_SELF",
+    --"LOOT_ITEM_SELF_MULTIPLE",
+}
+
+function NeedyGreedy:EnableChatFilter()
+    for _, msg in ipairs(FILTER_CHAT_LOOT_MSGS) do
+        ChatFrame_AddMessageEventFilter(msg, filter)
+    end
+end
+
+function NeedyGreedy:DisableChatFilter()
+    for _, msg in ipairs(FILTER_CHAT_LOOT_MSGS) do
+        ChatFrame_RemoveMessageEventFilter(msg, filter)
+    end
 end
 
 
