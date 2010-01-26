@@ -163,7 +163,8 @@ local yC = "|cffFFCC00" -- Golden
 local eC = "|cffEDA55F" -- Orange
 local gC = "|cff00FF00" -- Green
 
-
+-- For tracking original state of detailed loot information
+local originalSpamFilterSetting = nil
 
 -- Utility functions
 local function sanitizePattern(pattern)
@@ -180,7 +181,7 @@ end
 local function patternFromFormat(format)
     local pattern = ""
     local captureIndices = {}
-    
+
     local start = 1
     local captureIndex = 0
     repeat
@@ -214,7 +215,7 @@ local function patternFromFormat(format)
             break
         end
     until start > #format
-    
+
     return pattern, captureIndices
 end
 
@@ -226,14 +227,14 @@ local function superFind(text, pattern, captureIndices)
     if #results == 0 then
         return
     end
-    
+
     local s, e = tremove(results, 1), tremove(results, 1)
-    
+
     local captures = {}
     for _, index in ipairs(captureIndices) do
         tinsert(captures, results[index])
     end
-    
+
     return s, e, unpack(captures)
 end
 
@@ -265,10 +266,14 @@ function NeedyGreedy:OnEnable()
     -- Delay frame display so that player does not show as offline
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
 
+    self:RegisterEvent("PLAYER_LEAVING_WORLD")
+
     -- Set up chat filters
     if self.db.profile.filterLootMsgs then
         self:EnableChatFilter()
     end
+
+    self:SetShowLootSpam()
 end
 
 function NeedyGreedy:OnDisable()
@@ -278,12 +283,20 @@ function NeedyGreedy:OnDisable()
     if self.db.profile.filterLootMsgs then
         self:DisableChatFilter()
     end
+
+    self:ResetShowLootSpam()
 end
 
 function NeedyGreedy:PLAYER_ENTERING_WORLD()
     if self.db.profile.displayDetached and self.db.profile.detachedTooltip then
         self:ShowDetachedTooltip()
     end
+
+    self:SetShowLootSpam()
+end
+
+function NeedyGreedy:PLAYER_LEAVING_WORLD()
+    self:ResetShowLootSpam()
 end
 
 function NeedyGreedy:PARTY_MEMBERS_CHANGED()
@@ -1056,7 +1069,6 @@ end
 
 
 
-
 -- Chat filter functions
 local filter = function() return true end
 local FILTER_CHAT_LOOT_MSGS = {
@@ -1106,25 +1118,24 @@ function NeedyGreedy:DisableChatFilter()
 end
 
 
--- /dump NeedyGreedy:TestSuperFind()
---[[
-function NeedyGreedy:TestSuperFind()
-    do
-        local pattern, captureIndices = patternFromFormat("%s automatically passed on: %s because he cannot loot that item.")
-        DevTools_Dump({pattern, captureIndices})
-        DevTools_Dump({superFind("bob automatically passed on: [Tuxedo Jacket] because he cannot loot that item.", pattern, captureIndices)})
+
+-- Automatic enabling of detailed loot information
+function NeedyGreedy:SetShowLootSpam()
+    local showLootSpam = GetCVar("showLootSpam") -- 0 for filtered, 1 for details
+    if showLootSpam == "0" then
+        originalSpamFilterSetting = showLootSpam
+        SetCVar("showLootSpam", "1")
     end
-    
-    do
-        local pattern, captureIndices = patternFromFormat("%1$s gewinnt: %3$s |cff818181(Gier - %2$d)|r")
-        DevTools_Dump({pattern, captureIndices})
-        DevTools_Dump({superFind("bob gewinnt: [Tuxedo Jacket] |cff818181(Gier - 123)|r", pattern, captureIndices)})
-    end
-    
-    --DevTools_Dump()
-    
 end
-]]
+
+function NeedyGreedy:ResetShowLootSpam()
+    if originalSpamFilterSetting then
+        SetCVar("showLootSpam", originalSpamFilterSetting)
+        originalSpamFilterSetting = nil
+    end
+end
+
+
 
 -- Unit tests
 --[[
@@ -1156,3 +1167,23 @@ function NeedyGreedy:TestItemList()
     self:UpdateReport()
 end
 --]]
+
+-- /dump NeedyGreedy:TestSuperFind()
+--[[
+function NeedyGreedy:TestSuperFind()
+    do
+        local pattern, captureIndices = patternFromFormat("%s automatically passed on: %s because he cannot loot that item.")
+        DevTools_Dump({pattern, captureIndices})
+        DevTools_Dump({superFind("bob automatically passed on: [Tuxedo Jacket] because he cannot loot that item.", pattern, captureIndices)})
+    end
+
+    do
+        local pattern, captureIndices = patternFromFormat("%1$s gewinnt: %3$s |cff818181(Gier - %2$d)|r")
+        DevTools_Dump({pattern, captureIndices})
+        DevTools_Dump({superFind("bob gewinnt: [Tuxedo Jacket] |cff818181(Gier - 123)|r", pattern, captureIndices)})
+    end
+
+    --DevTools_Dump()
+
+end
+]]
