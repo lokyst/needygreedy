@@ -165,6 +165,80 @@ local gC = "|cff00FF00" -- Green
 
 
 
+-- Utility functions
+local function sanitizePattern(pattern)
+    pattern = string.gsub(pattern, "%(", "%%(")
+    pattern = string.gsub(pattern, "%)", "%%)")
+    pattern = string.gsub(pattern, "%%s", "(.+)")
+    pattern = string.gsub(pattern, "%%d", "(%%d+)")
+    pattern = string.gsub(pattern, "%-", "%%-")
+    return pattern
+end
+
+-- Converts a format string into a pattern and list of capture group indices
+-- e.g. %2$s won the %1$s
+local function patternFromFormat(format)
+    local pattern = ""
+    local captureIndices = {}
+    
+    local start = 1
+    local captureIndex = 0
+    repeat
+        -- find the next group
+        local s, e, group, position = format:find("(%%([%d$]*)[ds])", start)
+        if s then
+            -- add the text between the last group and this group
+            pattern = pattern..sanitizePattern(format:sub(start, s-1))
+            -- update the current capture index, using the position bit in the
+            -- group if it exists, otherwise just increment
+            if #position > 0 then
+                -- chop off the $ and convert to a number
+                captureIndex = tonumber(position:sub(1, #position-1))
+            else
+                captureIndex = captureIndex + 1
+            end
+            -- add the current capture index to our list
+            tinsert(captureIndices, captureIndex)
+            -- remove the position bit from the group, sanitize the remainder
+            -- and add it to the pattern
+            pattern = pattern..sanitizePattern(group:gsub("%d%$", "", 1))
+            -- start searching again from past the end of the group
+            start = e + 1
+        else
+            -- if no more groups can be found, but there's still more text
+            -- remaining in the format string, sanitize the remainder, add it
+            -- to the pattern and finish the loop
+            if start <= #format then
+                pattern = pattern..sanitizePattern(format:sub(start))
+            end
+            break
+        end
+    until start > #format
+    
+    return pattern, captureIndices
+end
+
+-- Like string:find but uses a list of capture indices to re-order the capture
+-- groups. For use with converted format strings that use positional args.
+-- e.g. %2$s won the %1$s.
+local function superFind(text, pattern, captureIndices)
+    local results = { text:find(pattern) }
+    if #results == 0 then
+        return
+    end
+    
+    local s, e = tremove(results, 1), tremove(results, 1)
+    
+    local captures = {}
+    for _, index in ipairs(captureIndices) do
+        tinsert(captures, results[index])
+    end
+    
+    return s, e, unpack(captures)
+end
+
+
+
 -- Event handling functions
 function NeedyGreedy:OnInitialize()
     self.db = LibStub("AceDB-3.0"):New("NeedyGreedyDB", defaults, true)
@@ -1032,6 +1106,25 @@ function NeedyGreedy:DisableChatFilter()
 end
 
 
+-- /dump NeedyGreedy:TestSuperFind()
+--[[
+function NeedyGreedy:TestSuperFind()
+    do
+        local pattern, captureIndices = patternFromFormat("%s automatically passed on: %s because he cannot loot that item.")
+        DevTools_Dump({pattern, captureIndices})
+        DevTools_Dump({superFind("bob automatically passed on: [Tuxedo Jacket] because he cannot loot that item.", pattern, captureIndices)})
+    end
+    
+    do
+        local pattern, captureIndices = patternFromFormat("%1$s gewinnt: %3$s |cff818181(Gier - %2$d)|r")
+        DevTools_Dump({pattern, captureIndices})
+        DevTools_Dump({superFind("bob gewinnt: [Tuxedo Jacket] |cff818181(Gier - 123)|r", pattern, captureIndices)})
+    end
+    
+    --DevTools_Dump()
+    
+end
+]]
 
 -- Unit tests
 --[[
