@@ -986,41 +986,49 @@ end
 -- Chat filter functions
 local filter = function() return true end
 local FILTER_CHAT_LOOT_MSGS = {
-    --"LOOT_ROLL_ALL_PASSED",
-    "LOOT_ROLL_DISENCHANT",
-    "LOOT_ROLL_DISENCHANT_SELF",
-    "LOOT_ROLL_GREED",
-    "LOOT_ROLL_GREED_SELF",
-    "LOOT_ROLL_NEED",
-    "LOOT_ROLL_NEED_SELF",
-    "LOOT_ROLL_PASSED",
-    "LOOT_ROLL_PASSED_AUTO",
-    "LOOT_ROLL_PASSED_AUTO_FEMALE",
-    "LOOT_ROLL_PASSED_SELF",
-    "LOOT_ROLL_PASSED_SELF_AUTO",
-    "LOOT_ROLL_ROLLED_DE",
-    "LOOT_ROLL_ROLLED_GREED",
-    "LOOT_ROLL_ROLLED_NEED",
-    --"LOOT_ROLL_WON",
-    --"LOOT_ROLL_YOU_WON",
-    --"LOOT_ITEM",
-    --"LOOT_ITEM_MULTIPLE",
-    --"LOOT_ITEM_PUSHED_SELF",
-    --"LOOT_ITEM_PUSHED_SELF_MULTIPLE",
-    --"LOOT_ITEM_SELF",
-    --"LOOT_ITEM_SELF_MULTIPLE",
+    --LOOT_ROLL_ALL_PASSED,
+    LOOT_ROLL_DISENCHANT,
+    LOOT_ROLL_DISENCHANT_SELF,
+    LOOT_ROLL_GREED,
+    LOOT_ROLL_GREED_SELF,
+    LOOT_ROLL_NEED,
+    LOOT_ROLL_NEED_SELF,
+    LOOT_ROLL_PASSED,
+    LOOT_ROLL_PASSED_AUTO,
+    LOOT_ROLL_PASSED_AUTO_FEMALE,
+    LOOT_ROLL_PASSED_SELF,
+    LOOT_ROLL_PASSED_SELF_AUTO,
+    LOOT_ROLL_ROLLED_DE,
+    LOOT_ROLL_ROLLED_GREED,
+    LOOT_ROLL_ROLLED_NEED,
+    --LOOT_ROLL_WON,
+    --LOOT_ROLL_YOU_WON,
+    --LOOT_ITEM,
+    --LOOT_ITEM_MULTIPLE,
+    --LOOT_ITEM_PUSHED_SELF,
+    --LOOT_ITEM_PUSHED_SELF_MULTIPLE,
+    --LOOT_ITEM_SELF,
+    --LOOT_ITEM_SELF_MULTIPLE,
 }
 
-function NeedyGreedy:EnableChatFilter()
-    for _, msg in ipairs(FILTER_CHAT_LOOT_MSGS) do
-        ChatFrame_AddMessageEventFilter(msg, filter)
+local function FilterLootMsg(ChatFrameSelf, event, ...)
+    local msg = arg1
+    for _, string in ipairs(FILTER_CHAT_LOOT_MSGS) do
+        local match = NeedyGreedy:unformat(string, msg)
+        if match then
+            return true
+        end
     end
+
+    return false, msg, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11
+end
+
+function NeedyGreedy:EnableChatFilter()
+    ChatFrame_AddMessageEventFilter("CHAT_MSG_LOOT", FilterLootMsg)
 end
 
 function NeedyGreedy:DisableChatFilter()
-    for _, msg in ipairs(FILTER_CHAT_LOOT_MSGS) do
-        ChatFrame_RemoveMessageEventFilter(msg, filter)
-    end
+    ChatFrame_RemoveMessageEventFilter("CHAT_MSG_LOOT", FilterLootMsg)
 end
 
 
