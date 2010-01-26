@@ -23,5 +23,7 @@ L["Click"] = true
 L["to hide/show detached tooltip"] = true
 L["Minimap Icon"] = true
 L["Toggle the display of the minimap icon"] = true
+L["Shift-Click"] = true
+L["to attach/detach tooltip"] = true
 
 end
