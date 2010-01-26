@@ -610,7 +610,7 @@ end
 
 function NeedyGreedy:RollText(number)
     if number then
-        return " " .. number
+        return " - " .. number
     else
         return ""
     end
@@ -660,9 +660,17 @@ function NeedyGreedy:ExpireItems()
     end
 end
 
+local CONVERTED_FORMATS = {}
 function NeedyGreedy:unformat(fmt, msg)
-    local pattern = string.gsub(string.gsub(fmt, "(%%s)", "(.+)"), "(%%d)", "(.+)")
-    local _, _, a1, a2, a3, a4 = string.find(msg, pattern)
+    local pattern, captureIndices
+    if CONVERTED_FORMATS[fmt] then
+        pattern, captureIndices = unpack(CONVERTED_FORMATS[fmt])
+    else
+        pattern, captureIndices = patternFromFormat(fmt)
+        CONVERTED_FORMATS[fmt] = {pattern, captureIndices}
+    end
+
+    local _, _, a1, a2, a3, a4 = superFind(msg, pattern, captureIndices)
     return a1, a2, a3, a4
 end
 
