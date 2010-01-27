@@ -240,6 +240,17 @@ local function superFind(text, pattern, captureIndices)
     return s, e, unpack(captures)
 end
 
+-- Strips the item ID out of the item link
+-- Needed for items that change their unique identifier
+local function itemIdFromLink(itemLink)
+    local found, _, itemString = string.find(itemLink, "|H(.+)|h")
+    if found then
+        local _, itemId = strsplit(":", itemString)
+        return tonumber(itemId)
+    end
+    return nil
+end
+
 
 
 -- Event handling functions
@@ -315,6 +326,7 @@ function NeedyGreedy:START_LOOT_ROLL(event, rollid)
         items[rollid] = {
             texture = texture,
             link = link,
+            itemID = itemIdFromLink(link),
             assigned = "",
             received = 0,
             choices = {},
@@ -475,6 +487,9 @@ function NeedyGreedy:CHAT_MSG_LOOT(event, msg)
 end
 
 function NeedyGreedy:RecordChoice(link, player, choice)
+    local _, _, quality = GetItemInfo(link)
+    if quality < self.db.profile.quality then return end
+
     for rollid, record in pairs(items) do
         if record.assigned == "" and record.link == link then
             record.choices[player] = choice
@@ -485,6 +500,9 @@ function NeedyGreedy:RecordChoice(link, player, choice)
 end
 
 function NeedyGreedy:RecordRoll(link, player, number)
+    local _, _, quality = GetItemInfo(link)
+    if quality < self.db.profile.quality then return end
+
     for rollid, record in pairs(items) do
         if record.assigned == "" and record.link == link then
             record.rolls[player] = number
@@ -495,6 +513,9 @@ function NeedyGreedy:RecordRoll(link, player, number)
 end
 
 function NeedyGreedy:RecordAwarded(link, player)
+    local _, _, quality = GetItemInfo(link)
+    if quality < self.db.profile.quality then return end
+
     for rollid, record in pairs(items) do
         if record.assigned == "" and record.link == link then
             record.assigned = player
@@ -505,9 +526,14 @@ function NeedyGreedy:RecordAwarded(link, player)
 end
 
 function NeedyGreedy:RecordReceived(link, player)
+    local _, _, quality = GetItemInfo(link)
+    if quality < self.db.profile.quality then return end
+
+    local match = false
     for rollid, record in pairs(items) do
         if record.received == 0 and record.link == link then
             record.received = GetTime()
+            match = true
             break
         end
         -- Since players receive disenchanted items not link
@@ -515,6 +541,18 @@ function NeedyGreedy:RecordReceived(link, player)
             record.received = GetTime()
         end
     end
+
+    if not match then
+        -- For items with weird unique identifiers
+        for rollid, record in pairs(items) do
+            if record.received == 0 and record.itemID == itemIdFromLink(link) then
+                record.received = GetTime()
+                match = true
+                break
+            end
+        end
+    end
+
     self:UpdateReport()
 end
 
