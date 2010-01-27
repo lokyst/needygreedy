@@ -850,12 +850,6 @@ function NeedyGreedy:ShowDBTooltip(frame)
             self.dbTooltip:AddColumn("LEFT")
         end
 
-        -- Add two columns for left and right buttons if detached
-        if self.db.profile.dbTooltip then
-            self.dbTooltip:AddColumn("RIGHT")
-            self.dbTooltip:AddColumn("LEFT")
-        end
-
         -- Fill in the info
         self:PopulateReportTooltip(self.dbTooltip)
 
