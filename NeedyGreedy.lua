@@ -987,6 +987,8 @@ function NeedyGreedy:PopulateReportTooltip(tooltip)
         end
     end
 
+    tooltip:AddLine("")
+
     -- Create table with party names and their rolls
     for i, name in ipairs(players) do
         local rollTable = {}
@@ -1027,7 +1029,10 @@ function NeedyGreedy:PopulateReportTooltip(tooltip)
 end
 
 function NeedyGreedy:AddHeaderText(tooltip)
-    tooltip:AddHeader(yC .. "NeedyGreedy|r")
+    local headerText = yC .. "NeedyGreedy|r"
+    local lineNum = tooltip:AddLine("")
+    tooltip:SetCell(lineNum, 1, headerText, tooltip:GetHeaderFont(), tooltip:GetColumnCount())
+
     tooltip:AddLine("")
 end
 
