@@ -53,7 +53,7 @@ local options = {
                     name = L["Display Items"],
                     desc = L["Number of item columns in the display window"],
                     type = "range",
-                    order = 50,
+                    order = 100,
                     min = 1,
                     max = 10,
                     step = 1,
@@ -66,7 +66,7 @@ local options = {
                     type = "range",
                     order = 60,
                     min = 0,
-                    max = 60,
+                    max = 110,
                     step = 1,
                     get = "GetExpiry",
                     set = "SetExpiry"
@@ -75,7 +75,7 @@ local options = {
                     name = L["Minimum Quality"],
                     desc = L["Minimum quality of item to be displayed"],
                     type = "select",
-                    order = 70,
+                    order = 120,
                     values = {
                         [ITEM_QUALITY_UNCOMMON] = ITEM_QUALITY2_DESC,
                         [ITEM_QUALITY_RARE] = ITEM_QUALITY3_DESC,
@@ -125,6 +125,14 @@ local options = {
                     get = "GetFilterLootMsgs",
                     set = "SetFilterLootMsgs",
                 },
+                onlyShowInParty = {
+                    name = L["Show only in party"],
+                    desc = L["Only display the roll window when in a party"],
+                    type = "toggle",
+                    order = 50,
+                    get = "GetOnlyShowInParty",
+                    set = "SetOnlyShowInParty",
+                },
             },
         },
     }
@@ -142,6 +150,7 @@ local defaults = {
         displayDetached = false,
         minimap = { hide = false },
         filterLootMsgs = false,
+        onlyShowInParty = false,
     }
 }
 
@@ -817,12 +826,23 @@ function NeedyGreedy:SetFilterLootMsgs(info, filterLootMsgs)
     end
 end
 
+function NeedyGreedy:GetOnlyShowInParty(info)
+    return self.db.profile.onlyShowInParty
+end
+
+function NeedyGreedy:SetOnlyShowInParty(info, onlyShowInParty)
+    self.db.profile.onlyShowInParty = onlyShowInParty
+    self:RefreshTooltip()
+end
+
 
 
 -- Detachable QTip Frames
 local LibQTip = LibStub('LibQTip-1.0')
 
 function NeedyGreedy:ShowDetachedTooltip()
+    if not self:DisplayRollTableCheck() then return end
+
     -- Acquire a tooltip
     self.detachedTooltip = LibQTip:Acquire("NeedyGreedyReport", 1, "LEFT")
 
@@ -890,20 +910,19 @@ function NeedyGreedy:ShowDBTooltip(frame)
     -- Acquire a tooltip
     self.dbTooltip = LibQTip:Acquire("NeedyGreedyDBReport", 1, "LEFT")
 
+    self:AddHeaderText(self.dbTooltip)
     if not self.db.profile.detachedTooltip then
-        -- Add columns here because tooltip:Clear() preserves columns
-        for i = 1, self.db.profile.nItems do
-            self.dbTooltip:AddColumn("LEFT")
+        if self:DisplayRollTableCheck() then
+            -- Add columns here because tooltip:Clear() preserves columns
+            for i = 1, self.db.profile.nItems do
+                self.dbTooltip:AddColumn("LEFT")
+            end
+
+            -- Fill in the info
+            self:PopulateReportTooltip(self.dbTooltip)
         end
-
-        -- Fill in the info
-        self:PopulateReportTooltip(self.dbTooltip)
-
-    else
-        -- Fill in the info
-        self:AddHeaderText(self.dbTooltip)
-        self:AddInfoText(self.dbTooltip)
     end
+    self:AddInfoText(self.dbTooltip)
 
     if frame then self.dbTooltip:SmartAnchorTo(frame) end
 
@@ -1031,8 +1050,6 @@ function NeedyGreedy:PopulateReportTooltip(tooltip)
     -- Display left and right arrows if frame is detached
     if self.db.profile.detachedTooltip then
         self:AddPagerArrows(tooltip)
-    else
-        self:AddInfoText(tooltip)
     end
 end
 
@@ -1085,14 +1102,23 @@ function NeedyGreedy:AddPagerArrows(tooltip)
 end
 
 function NeedyGreedy:AddInfoText(tooltip)
-    local helpText = ""
-    if self.db.profile.detachedTooltip then
-        helpText = helpText .. eC .. L["Click"] .. "|r " .. gC .. L["to hide/show detached tooltip"] .. "|r"
+    local lineNum
+    local helpText
+
+    if self.db.profile.onlyShowInParty and not self:CheckOnlyShowInParty() then
+        lineNum = tooltip:AddLine()
+        tooltip:SetCell(lineNum, 1, L["You are not in a party"], nil, tooltip:GetColumnCount())
     end
-    helpText = helpText .. "\n" .. eC .. L["Shift-Click"] .. "|r " .. gC .. L["to attach/detach tooltip"] .. "|r"
-    helpText = helpText .. "\n" .. eC .. L["Alt-Click"] .. "|r " .. gC .. L["to clear item list"] .. "|r"
+
     tooltip:AddLine("")
-    local lineNum = tooltip:AddLine()
+
+    helpText = ""
+    if self.db.profile.detachedTooltip then
+        helpText = helpText .. eC .. L["Click"] .. "|r " .. gC .. L["to hide/show detached tooltip"] .. "|r\n"
+    end
+    helpText = helpText .. eC .. L["Shift-Click"] .. "|r " .. gC .. L["to attach/detach tooltip"] .. "|r\n"
+    helpText = helpText .. eC .. L["Alt-Click"] .. "|r " .. gC .. L["to clear item list"] .. "|r"
+    lineNum = tooltip:AddLine()
     tooltip:SetCell(lineNum, 1, helpText, nil, tooltip:GetColumnCount())
 end
 
@@ -1126,6 +1152,22 @@ function NeedyGreedy:ToggleDisplay()
     end
 
     self.db.profile.displayDetached = not self.db.profile.displayDetached
+end
+
+function NeedyGreedy:DisplayRollTableCheck()
+    if self:CheckOnlyShowInParty() then
+        return true
+    end
+
+    return false
+end
+
+function NeedyGreedy:CheckOnlyShowInParty()
+    if self.db.profile.onlyShowInParty and (GetNumPartyMembers() == 0) then
+        return false
+    end
+
+    return true
 end
 
 

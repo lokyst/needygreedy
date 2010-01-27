@@ -31,5 +31,8 @@ L["Alt-Click"] = true
 L["to clear item list"] = true
 L["General"] = true
 L["Profile"] = true
+L["Show only in party"] = true
+L["Only display the roll window when in a party"] = true
+L["You are not in a party"] = true
 
 end
