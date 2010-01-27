@@ -29,5 +29,7 @@ L["Filter Loot Messages"] = true
 L["Enable filtering of loot roll messages"] = true
 L["Alt-Click"] = true
 L["to clear item list"] = true
+L["General"] = true
+L["Profile"] = true
 
 end

@@ -45,81 +45,87 @@ local options = {
     handler = NeedyGreedy,
     type = "group",
     args = {
-        nItems = {
-            name = L["Display Items"],
-            desc = L["Number of item columns in the display window"],
-            type = "range",
-            order = 50,
-            min = 1,
-            max = 10,
-            step = 1,
-            get = "GetNItems",
-            set = "SetNItems"
-        },
-        expiry = {
-            name = L["Expiry Time"],
-            desc = L["Minutes after item is received before it is removed from display (0 = forever)"],
-            type = "range",
-            order = 60,
-            min = 0,
-            max = 60,
-            step = 1,
-            get = "GetExpiry",
-            set = "SetExpiry"
-        },
-        quality = {
-            name = L["Minimum Quality"],
-            desc = L["Minimum quality of item to be displayed"],
-            type = "select",
-            order = 70,
-            values = {
-                [ITEM_QUALITY_UNCOMMON] = ITEM_QUALITY2_DESC,
-                [ITEM_QUALITY_RARE] = ITEM_QUALITY3_DESC,
-                [ITEM_QUALITY_EPIC] = ITEM_QUALITY4_DESC
+        general = {
+            name = L['General'],
+            type = 'group',
+            args = {
+                nItems = {
+                    name = L["Display Items"],
+                    desc = L["Number of item columns in the display window"],
+                    type = "range",
+                    order = 50,
+                    min = 1,
+                    max = 10,
+                    step = 1,
+                    get = "GetNItems",
+                    set = "SetNItems"
+                },
+                expiry = {
+                    name = L["Expiry Time"],
+                    desc = L["Minutes after item is received before it is removed from display (0 = forever)"],
+                    type = "range",
+                    order = 60,
+                    min = 0,
+                    max = 60,
+                    step = 1,
+                    get = "GetExpiry",
+                    set = "SetExpiry"
+                },
+                quality = {
+                    name = L["Minimum Quality"],
+                    desc = L["Minimum quality of item to be displayed"],
+                    type = "select",
+                    order = 70,
+                    values = {
+                        [ITEM_QUALITY_UNCOMMON] = ITEM_QUALITY2_DESC,
+                        [ITEM_QUALITY_RARE] = ITEM_QUALITY3_DESC,
+                        [ITEM_QUALITY_EPIC] = ITEM_QUALITY4_DESC
+                    },
+                    style = "dropdown",
+                    get = "GetQuality",
+                    set = "SetQuality"
+                },
+                displayIcons = {
+                    name = L["Graphical Display"],
+                    desc = L["Display icons for rolls types instead of text"],
+                    type = "toggle",
+                    order = 20,
+                    get = "GetDisplayIcons",
+                    set = "SetDisplayIcons",
+                },
+                detachedTooltip = {
+                    name = L["Detach Tooltip"],
+                    desc = L["Display the roll information in a standalone window"],
+                    type = "toggle",
+                    order = 10,
+                    get = "GetDetachedTooltip",
+                    set = "SetDetachedTooltip",
+                },
+                displayTextLink = {
+                    name = L["Item Names"],
+                    desc = L["Toggle the display of the item name in the header"],
+                    order = 30,
+                    type = "toggle",
+                    get = "GetDisplayTextLink",
+                    set = "SetDisplayTextLink",
+                },
+                hideMinimapIcon = {
+                    name = L["Minimap Icon"],
+                    desc = L["Toggle the display of the minimap icon"],
+                    type = "toggle",
+                    order = 40,
+                    get = "GetHideMinimapIcon",
+                    set = "SetHideMinimapIcon",
+                },
+                filterLootMsgs = {
+                    name = L["Filter Loot Messages"],
+                    desc = L["Enable filtering of loot roll messages"],
+                    type = "toggle",
+                    order = 35,
+                    get = "GetFilterLootMsgs",
+                    set = "SetFilterLootMsgs",
+                },
             },
-            style = "dropdown",
-            get = "GetQuality",
-            set = "SetQuality"
-        },
-        displayIcons = {
-            name = L["Graphical Display"],
-            desc = L["Display icons for rolls types instead of text"],
-            type = "toggle",
-            order = 20,
-            get = "GetDisplayIcons",
-            set = "SetDisplayIcons",
-        },
-        detachedTooltip = {
-            name = L["Detach Tooltip"],
-            desc = L["Display the roll information in a standalone window"],
-            type = "toggle",
-            order = 10,
-            get = "GetDetachedTooltip",
-            set = "SetDetachedTooltip",
-        },
-        displayTextLink = {
-            name = L["Item Names"],
-            desc = L["Toggle the display of the item name in the header"],
-            order = 30,
-            type = "toggle",
-            get = "GetDisplayTextLink",
-            set = "SetDisplayTextLink",
-        },
-        hideMinimapIcon = {
-            name = L["Minimap Icon"],
-            desc = L["Toggle the display of the minimap icon"],
-            type = "toggle",
-            order = 40,
-            get = "GetHideMinimapIcon",
-            set = "SetHideMinimapIcon",
-        },
-        filterLootMsgs = {
-            name = L["Filter Loot Messages"],
-            desc = L["Enable filtering of loot roll messages"],
-            type = "toggle",
-            order = 35,
-            get = "GetFilterLootMsgs",
-            set = "SetFilterLootMsgs",
         },
     }
 }
@@ -259,9 +265,11 @@ function NeedyGreedy:OnInitialize()
     self.db.RegisterCallback(self, "OnProfileChanged", "RefreshTooltip")
     self.db.RegisterCallback(self, "OnProfileCopied", "RefreshTooltip")
     self.db.RegisterCallback(self, "OnProfileReset", "RefreshTooltip")
-    options.args.profiles = LibStub("AceDBOptions-3.0"):GetOptionsTable(self.db)
+    options.args.profile = LibStub("AceDBOptions-3.0"):GetOptionsTable(self.db)
     LibStub("AceConfig-3.0"):RegisterOptionsTable("NeedyGreedy", options)
-    LibStub("AceConfigDialog-3.0"):AddToBlizOptions("NeedyGreedy")
+    local ACD = LibStub("AceConfigDialog-3.0")
+    ACD:AddToBlizOptions("NeedyGreedy", "NeedyGreedy", nil, "general")
+    ACD:AddToBlizOptions("NeedyGreedy", L["Profile"], "NeedyGreedy", "profile")
     self:RegisterChatCommand("needygreedy", function() InterfaceOptionsFrame_OpenToCategory("NeedyGreedy") end)
     -- self:RegisterChatCommand("ngt", "TestItemList")
     -- self.items = items
