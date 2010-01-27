@@ -20,6 +20,8 @@ local NeedyGreedyLDB = LibStub("LibDataBroker-1.1"):NewDataObject("NeedyGreedy",
                 NeedyGreedy.db.profile.displayDetached = true
                 NeedyGreedy:ShowDetachedTooltip()
             end
+        elseif IsAltKeyDown() then
+            NeedyGreedy:ClearItems()
         elseif NeedyGreedy.db.profile.detachedTooltip then
             NeedyGreedy:ToggleDisplay()
         end
@@ -513,6 +515,11 @@ function NeedyGreedy:RecordReceived(link, player)
             record.received = GetTime()
         end
     end
+    self:UpdateReport()
+end
+
+function NeedyGreedy:ClearItems()
+    items = {}
     self:UpdateReport()
 end
 
@@ -1038,6 +1045,7 @@ function NeedyGreedy:AddInfoText(tooltip)
         helpText = helpText .. eC .. L["Click"] .. "|r " .. gC .. L["to hide/show detached tooltip"] .. "|r"
     end
     helpText = helpText .. "\n" .. eC .. L["Shift-Click"] .. "|r " .. gC .. L["to attach/detach tooltip"] .. "|r"
+    helpText = helpText .. "\n" .. eC .. L["Alt-Click"] .. "|r " .. gC .. L["to clear item list"] .. "|r"
     tooltip:AddLine("")
     local lineNum = tooltip:AddLine()
     tooltip:SetCell(lineNum, 1, helpText, nil, tooltip:GetColumnCount())
