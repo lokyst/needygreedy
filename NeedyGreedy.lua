@@ -303,8 +303,8 @@ function NeedyGreedy:OnInitialize()
     ACD:AddToBlizOptions("NeedyGreedy", L["Profile"], "NeedyGreedy", "profile")
     self:RegisterChatCommand("needygreedy", function() InterfaceOptionsFrame_OpenToCategory("NeedyGreedy") end)
     self:RegisterChatCommand("ng", function() InterfaceOptionsFrame_OpenToCategory("NeedyGreedy") end)
-    -- self:RegisterChatCommand("ngt", "TestItemList")
-    -- self.items = items
+    self:RegisterChatCommand("ngt", "TestItemList")
+    self.items = items
 
     -- Register the minimap icon
     ngDBIcon:Register("NeedyGreedy", NeedyGreedyLDB, self.db.profile.minimap)
@@ -356,6 +356,7 @@ function NeedyGreedy:PLAYER_LEAVING_WORLD()
 end
 
 function NeedyGreedy:PARTY_MEMBERS_CHANGED()
+    wipe(nameList)
     self:RefreshTooltip()
 end
 
@@ -610,8 +611,8 @@ function NeedyGreedy:RecordReceived(link, player)
 end
 
 function NeedyGreedy:ClearItems()
-    items = {}
-    nameList = {}
+    wipe(items)
+    wipe(nameList)
     self:UpdateReport()
 end
 
@@ -644,14 +645,14 @@ function NeedyGreedy:GetSortedPlayers()
         for i = 1,MAX_RAID_MEMBERS do
             name = GetRaidRosterInfo(i)
             if name then
-                if not nameList[name] then nameList[name] = name end
+                if not (nameList[name]) and (name ~= UNKNKOWN) then nameList[name] = name end
             end
         end
     else
         for _, unit in ipairs({"player", "party1", "party2", "party3", "party4"}) do
             local name = UnitName(unit)
             if name then
-                if not nameList[name] then nameList[name] = name end
+                if not (nameList[name]) and (name ~= UNKNKOWN) then nameList[name] = name end
             end
         end
     end
@@ -764,7 +765,7 @@ function NeedyGreedy:ExpireItems()
     for rollid, record in pairs(items) do
         if record.received > 0 and now - record.received >= self.db.profile.expiry * 60 then
             items[rollid] = nil
-            nameList = {}
+            wipte(nameList)
             update = true
         end
     end
@@ -1317,7 +1318,10 @@ end
 
 
 -- Unit tests
---[[
+function NeedyGreedy:SetItems(itemList)
+    items = itemList
+end
+
 function NeedyGreedy:TestItemList()
     items[1] = {
         texture = "Interface\\Icons\\INV_Weapon_ShortBlade_04",
