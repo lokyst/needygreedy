@@ -37,6 +37,7 @@ local ngDBIcon = LibStub("LibDBIcon-1.0")
 
 local report = {}
 local items = {}
+local nameList = {}
 
 -- Set up configuration window
 local options = {
@@ -141,6 +142,14 @@ local options = {
                     get = "GetHideInCombat",
                     set = "SetHideInCombat",
                 },
+                showGroupOnly = {
+                    name = L["Hide Non-Members"],
+                    desc = L["Only display the names of members currently in your party"],
+                    type = "toggle",
+                    order = 40,
+                    get = "GetShowGroupOnly",
+                    set = "SetShowGroupOnly",
+                },
             },
         },
     }
@@ -160,6 +169,7 @@ local defaults = {
         filterLootMsgs = false,
         onlyShowInParty = false,
         hideInCombat = false,
+        showGroupOnly = true,
     }
 }
 
@@ -601,6 +611,7 @@ end
 
 function NeedyGreedy:ClearItems()
     items = {}
+    nameList = {}
     self:UpdateReport()
 end
 
@@ -633,17 +644,30 @@ function NeedyGreedy:GetSortedPlayers()
         for i = 1,MAX_RAID_MEMBERS do
             name = GetRaidRosterInfo(i)
             if name then
-                table.insert(list, name)
+                if not nameList[name] then nameList[name] = name end
             end
         end
     else
         for _, unit in ipairs({"player", "party1", "party2", "party3", "party4"}) do
             local name = UnitName(unit)
             if name then
-                table.insert(list, name)
+                if not nameList[name] then nameList[name] = name end
             end
         end
     end
+
+    if not self.db.profile.showGroupOnly then
+        for _, item in ipairs(items) do
+            for name, _ in pairs(item.choices) do
+                if not nameList[name] then nameList[name] = name end
+            end
+        end
+    end
+
+    for name, _ in pairs(nameList) do
+        table.insert(list, name)
+    end
+
     table.sort(list)
     return list
 end
@@ -740,6 +764,7 @@ function NeedyGreedy:ExpireItems()
     for rollid, record in pairs(items) do
         if record.received > 0 and now - record.received >= self.db.profile.expiry * 60 then
             items[rollid] = nil
+            nameList = {}
             update = true
         end
     end
@@ -867,6 +892,15 @@ end
 
 function NeedyGreedy:SetHideInCombat(info, hideInCombat)
     self.db.profile.hideInCombat = hideInCombat
+    self:RefreshTooltip()
+end
+
+function NeedyGreedy:GetShowGroupOnly(info)
+    return self.db.profile.showGroupOnly
+end
+
+function NeedyGreedy:SetShowGroupOnly(info, showGroupOnly)
+    self.db.profile.showGroupOnly = showGroupOnly
     self:RefreshTooltip()
 end
 
@@ -1216,7 +1250,6 @@ end
 
 
 -- Chat filter functions
-local filter = function() return true end
 local FILTER_CHAT_LOOT_MSGS = {
     --LOOT_ROLL_ALL_PASSED,
     LOOT_ROLL_DISENCHANT,
@@ -1300,7 +1333,7 @@ function NeedyGreedy:TestItemList()
         assigned = "",
         received = 0,
         choices = {Matsuri = "disenchant", Lubov = "greed"},
-        rolls = {Matsuri = "- 61", Lubov = "- 98"}
+        rolls = {Matsuri = 61, Lubov = 98}
     }
     items[3] = {
         texture = "Interface\\Icons\\INV_Weapon_ShortBlade_06",
@@ -1308,7 +1341,7 @@ function NeedyGreedy:TestItemList()
         assigned = "Matsuri",
         received = GetTime(),
         choices = {Shalii = "pass", Matsuri = "need"},
-        rolls = {Shalii = "", Matsuri = " - 42"}
+        rolls = {Shalii = "", Matsuri = 42}
     }
     self:UpdateReport()
 end
