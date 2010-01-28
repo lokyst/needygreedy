@@ -625,7 +625,7 @@ end
 function NeedyGreedy:ClearItems()
     wipe(items)
     wipe(nameList)
-    self:UpdateReport()
+    self:RefreshTooltip()
 end
 
 
@@ -914,6 +914,7 @@ end
 
 function NeedyGreedy:SetShowGroupOnly(info, showGroupOnly)
     self.db.profile.showGroupOnly = showGroupOnly
+    wipe(nameList)
     self:RefreshTooltip()
 end
 
@@ -1211,6 +1212,7 @@ function NeedyGreedy:UpdateReport()
     else
         return
     end
+
     self:PopulateReportTooltip(tooltip)
 end
 
