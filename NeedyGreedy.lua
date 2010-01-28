@@ -317,7 +317,7 @@ function NeedyGreedy:OnEnable()
     self:RegisterEvent("PLAYER_REGEN_DISABLED")
     self:RegisterEvent("PLAYER_REGEN_ENABLED")
 
-    self:ScheduleRepeatingTimer("ExpireItems", 1)
+    self:ScheduleRepeatingTimer("ExpireItems", 10)
 
     -- Delay frame display so that player does not show as offline
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -581,7 +581,8 @@ end
 
 function NeedyGreedy:RecordReceived(link, player)
     local _, _, quality = GetItemInfo(link)
-    if quality < self.db.profile.quality then return end
+    -- Because disenchanted items can be white >_<9
+    if quality < ITEM_QUALITY_COMMON then return end
 
     local match = false
     for rollid, record in pairs(items) do
@@ -589,10 +590,6 @@ function NeedyGreedy:RecordReceived(link, player)
             record.received = GetTime()
             match = true
             break
-        end
-        -- Since players receive disenchanted items not link
-        if record.choices[player] == "disenchant" and record.assigned == player and record.received == 0 then
-            record.received = GetTime()
         end
     end
 
@@ -603,6 +600,19 @@ function NeedyGreedy:RecordReceived(link, player)
                 record.received = GetTime()
                 match = true
                 break
+            end
+        end
+    end
+
+    if not match then
+        for rollid, record in pairs(items) do
+            -- Since players receive the results of the disenchant, we will never be
+            -- able to match the link that triggered the received message against
+            -- our list. However, we should cross disenchanted items that have been
+            -- assigned off the list as we find them on the assumption that they
+            -- would have automatically received the item anyway.
+            if record.choices[player] == "disenchant" and record.assigned == player and record.received == 0 then
+                record.received = GetTime()
             end
         end
     end
@@ -1320,6 +1330,7 @@ end
 -- Unit tests
 function NeedyGreedy:SetItems(itemList)
     items = itemList
+    self:UpdateReport()
 end
 
 function NeedyGreedy:TestItemList()
