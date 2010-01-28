@@ -671,7 +671,6 @@ function NeedyGreedy:GetSortedPlayers()
 
     if not self.db.profile.showGroupOnly then
         for _, item in pairs(items) do
-            DevTools_Dump(item)
             for name, _ in pairs(item.choices) do
                 if not nameList[name] then nameList[name] = name end
             end
@@ -1334,6 +1333,7 @@ function NeedyGreedy:SetItems(itemList)
     self:UpdateReport()
 end
 
+
 function NeedyGreedy:TestItemList()
     items = {
         nil, -- [1]
@@ -1521,7 +1521,7 @@ function NeedyGreedy:TestItemList()
     }
     self:UpdateReport()
 end
-
+--]]
 
 -- /dump NeedyGreedy:TestSuperFind()
 --[[
