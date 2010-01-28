@@ -133,6 +133,14 @@ local options = {
                     get = "GetOnlyShowInParty",
                     set = "SetOnlyShowInParty",
                 },
+                hideInCombat = {
+                    name = L["Hide in combat"],
+                    desc = L["Only display the roll window when not in combat"],
+                    type = "toggle",
+                    order = 60,
+                    get = "GetHideInCombat",
+                    set = "SetHideInCombat",
+                },
             },
         },
     }
@@ -182,6 +190,9 @@ local gC = "|cff00FF00" -- Green
 
 -- For tracking original state of detailed loot information
 local originalSpamFilterSetting = nil
+
+-- For tracking combat status
+local IS_IN_COMBAT = nil
 
 -- Utility functions
 local function sanitizePattern(pattern)
@@ -280,6 +291,7 @@ function NeedyGreedy:OnInitialize()
     ACD:AddToBlizOptions("NeedyGreedy", "NeedyGreedy", nil, "general")
     ACD:AddToBlizOptions("NeedyGreedy", L["Profile"], "NeedyGreedy", "profile")
     self:RegisterChatCommand("needygreedy", function() InterfaceOptionsFrame_OpenToCategory("NeedyGreedy") end)
+    self:RegisterChatCommand("ng", function() InterfaceOptionsFrame_OpenToCategory("NeedyGreedy") end)
     -- self:RegisterChatCommand("ngt", "TestItemList")
     -- self.items = items
 
@@ -291,6 +303,9 @@ function NeedyGreedy:OnEnable()
     self:RegisterEvent("PARTY_MEMBERS_CHANGED")
     self:RegisterEvent("START_LOOT_ROLL")
     self:RegisterEvent("CHAT_MSG_LOOT")
+    self:RegisterEvent("PLAYER_REGEN_DISABLED")
+    self:RegisterEvent("PLAYER_REGEN_ENABLED")
+
     self:ScheduleRepeatingTimer("ExpireItems", 1)
 
     -- Delay frame display so that player does not show as offline
@@ -330,6 +345,16 @@ function NeedyGreedy:PLAYER_LEAVING_WORLD()
 end
 
 function NeedyGreedy:PARTY_MEMBERS_CHANGED()
+    self:RefreshTooltip()
+end
+
+function NeedyGreedy:PLAYER_REGEN_DISABLED()
+    IS_IN_COMBAT = true
+    self:RefreshTooltip()
+end
+
+function NeedyGreedy:PLAYER_REGEN_ENABLED()
+    IS_IN_COMBAT = false
     self:RefreshTooltip()
 end
 
@@ -835,6 +860,15 @@ function NeedyGreedy:SetOnlyShowInParty(info, onlyShowInParty)
     self:RefreshTooltip()
 end
 
+function NeedyGreedy:GetHideInCombat(info)
+    return self.db.profile.hideInCombat
+end
+
+function NeedyGreedy:SetHideInCombat(info, hideInCombat)
+    self.db.profile.hideInCombat = hideInCombat
+    self:RefreshTooltip()
+end
+
 
 
 -- Detachable QTip Frames
@@ -1155,7 +1189,7 @@ function NeedyGreedy:ToggleDisplay()
 end
 
 function NeedyGreedy:DisplayRollTableCheck()
-    if self:CheckOnlyShowInParty() then
+    if self:CheckOnlyShowInParty() and self:CheckShowInCombat() then
         return true
     end
 
@@ -1164,6 +1198,14 @@ end
 
 function NeedyGreedy:CheckOnlyShowInParty()
     if self.db.profile.onlyShowInParty and (GetNumPartyMembers() == 0) then
+        return false
+    end
+
+    return true
+end
+
+function NeedyGreedy:CheckShowInCombat()
+    if self.db.profile.hideInCombat and IS_IN_COMBAT then
         return false
     end
 

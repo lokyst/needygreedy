@@ -34,5 +34,7 @@ L["Profile"] = true
 L["Show only in party"] = true
 L["Only display the roll window when in a party"] = true
 L["You are not in a party"] = true
+L["Hide in combat"] = true
+L["Only display the roll window when not in combat"] = true
 
 end
