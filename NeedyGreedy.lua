@@ -186,13 +186,14 @@ local NEEDYGREEDY_CHOICE = {
     },
     ["pass"] = {
         ["string"] = "|c00CCCCCC" .. PASS .. "|r",
-        ["icon"] = "|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_7:16|t",
+        ["icon"] = "|TInterface\\Buttons\\UI-GroupLoot-Pass-Up:" .. iconSize .. "|t",
     },
     ["disenchant"] = {
         ["string"] = "|c00FF00FF" .. ROLL_DISENCHANT .. "|r",
         ["icon"] = "|TInterface\\Buttons\\UI-GroupLoot-DE-Up:" .. iconSize .. "|t",
     }
 }
+local BLANK_ICON = "|T:27|t"
 
 -- Funky colors for text strings
 local yC = "|cffFFCC00" -- Golden
@@ -1099,19 +1100,17 @@ function NeedyGreedy:PopulateReportTooltip(tooltip)
 
     -- Create table with party names and their rolls
     for i, name in ipairs(players) do
-        local rollTable = {}
-        table.insert(rollTable, self:ColorizeName(name))
+        local partyLine = tooltip:AddLine("")
+        tooltip:SetCell(partyLine, 1, self:ColorizeName(name) .. " " .. (self.db.profile.displayIcons and BLANK_ICON or ""), nil, "LEFT", nil, nil, nil, nil, nil, 100)
 
         for i = 1, nItems do
             local index = report.firstItem + i - 1
             if index <= count then
                 local rollID = sorted[index]
                 local item = items[rollID]
-                table.insert(rollTable, self:ChoiceText(item.choices[name]) .. self:RollText(item.rolls[name]))
+                tooltip:SetCell(partyLine, i + 1, self:ChoiceText(item.choices[name]) .. self:RollText(item.rolls[name]), nil, "LEFT", nil, nil, nil, nil, nil, 60)
             end
         end
-
-        tooltip:AddLine(unpack(rollTable))
     end
 
     tooltip:AddSeparator()
@@ -1334,6 +1333,7 @@ function NeedyGreedy:SetItems(itemList)
     self:UpdateReport()
 end
 
+--[[
 function NeedyGreedy:TestItemList()
     items[1] = {
         texture = "Interface\\Icons\\INV_Weapon_ShortBlade_04",
