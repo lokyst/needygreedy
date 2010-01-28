@@ -670,7 +670,8 @@ function NeedyGreedy:GetSortedPlayers()
     end
 
     if not self.db.profile.showGroupOnly then
-        for _, item in ipairs(items) do
+        for _, item in pairs(items) do
+            DevTools_Dump(item)
             for name, _ in pairs(item.choices) do
                 if not nameList[name] then nameList[name] = name end
             end
@@ -1333,35 +1334,194 @@ function NeedyGreedy:SetItems(itemList)
     self:UpdateReport()
 end
 
---[[
 function NeedyGreedy:TestItemList()
-    items[1] = {
-        texture = "Interface\\Icons\\INV_Weapon_ShortBlade_04",
-        link = "|cff0070dd|Hitem:2169:0:0:0:0:0:0:1016630800:80|h[Buzzer Blade]|h|r",
-        assigned = "",
-        received = 0,
-        choices = {},
-        rolls = {}
-    }
-    items[2] = {
-        texture = "Interface\\Icons\\INV_Weapon_ShortBlade_05",
-        link = "|cff0070dd|Hitem:2169:0:0:0:0:0:0:1016630800:80|h[Buzzer Blade]|h|r",
-        assigned = "",
-        received = 0,
-        choices = {Matsuri = "disenchant", Lubov = "greed"},
-        rolls = {Matsuri = 61, Lubov = 98}
-    }
-    items[3] = {
-        texture = "Interface\\Icons\\INV_Weapon_ShortBlade_06",
-        link = "|cff0070dd|Hitem:2169:0:0:0:0:0:0:1016630800:80|h[Buzzer Blade]|h|r",
-        assigned = "Matsuri",
-        received = GetTime(),
-        choices = {Shalii = "pass", Matsuri = "need"},
-        rolls = {Shalii = "", Matsuri = 42}
+    items = {
+        nil, -- [1]
+        nil, -- [2]
+        nil, -- [3]
+        nil, -- [4]
+        nil, -- [5]
+        {
+            ["received"] = 108626.818,
+            ["assigned"] = "Evilplaque",
+            ["itemID"] = 36040,
+            ["link"] = "|cff1eff00|Hitem:36040:0:0:0:0:0:-36:-2033450911:80|h[Condor Pants of the Sorcerer]|h|r",
+            ["choices"] = {
+                ["Aneeka"] = "greed",
+                ["Lubov"] = "greed",
+                ["Evilplaque"] = "greed",
+                ["Blizzy"] = "disenchant",
+                ["Dkmonkey"] = "disenchant",
+            },
+            ["rolls"] = {
+                ["Aneeka"] = "24",
+                ["Lubov"] = "66",
+                ["Evilplaque"] = "98",
+                ["Blizzy"] = "52",
+                ["Dkmonkey"] = "3",
+            },
+            ["texture"] = "Interface\\Icons\\INV_Pants_Cloth_10",
+        }, -- [6]
+        {
+            ["received"] = 109046.237,
+            ["assigned"] = "Lubov",
+            ["itemID"] = 50228,
+            ["link"] = "|cffa335ee|Hitem:50228:0:0:0:0:0:0:1749772928:80|h[Barbed Ymirheim Choker]|h|r",
+            ["choices"] = {
+                ["Aneeka"] = "greed",
+                ["Blizzy"] = "disenchant",
+                ["Evilplaque"] = "disenchant",
+                ["Lubov"] = "need",
+                ["Dkmonkey"] = "disenchant",
+            },
+            ["rolls"] = {
+                ["Lubov"] = "17",
+            },
+            ["texture"] = "Interface\\Icons\\INV_Jewelry_Necklace_22",
+        }, -- [7]
+        {
+            ["received"] = 109223.287,
+            ["assigned"] = "Lubov",
+            ["itemID"] = 36260,
+            ["link"] = "|cff1eff00|Hitem:36260:0:0:0:0:0:-40:-1617756088:80|h[Cormorant Footwraps of the Bandit]|h|r",
+            ["choices"] = {
+                ["Aneeka"] = "greed",
+                ["Blizzy"] = "disenchant",
+                ["Evilplaque"] = "greed",
+                ["Lubov"] = "greed",
+                ["Dkmonkey"] = "disenchant",
+            },
+            ["rolls"] = {
+                ["Aneeka"] = "61",
+                ["Blizzy"] = "54",
+                ["Evilplaque"] = "50",
+                ["Lubov"] = "87",
+                ["Dkmonkey"] = "1",
+            },
+            ["texture"] = "Interface\\Icons\\INV_Boots_Chain_07",
+        }, -- [8]
+        {
+            ["received"] = 109267.102,
+            ["assigned"] = "Dkmonkey",
+            ["itemID"] = 50319,
+            ["link"] = "|cffa335ee|Hitem:50319:0:0:0:0:0:0:459549600:80|h[Unsharpened Ice Razor]|h|r",
+            ["choices"] = {
+                ["Aneeka"] = "disenchant",
+                ["Lubov"] = "disenchant",
+                ["Evilplaque"] = "disenchant",
+                ["Blizzy"] = "disenchant",
+                ["Dkmonkey"] = "disenchant",
+            },
+            ["rolls"] = {
+                ["Aneeka"] = "69",
+                ["Lubov"] = "28",
+                ["Evilplaque"] = "30",
+                ["Blizzy"] = "21",
+                ["Dkmonkey"] = "80",
+            },
+            ["texture"] = "Interface\\Icons\\inv_weapon_shortblade_61",
+        }, -- [9]
+        {
+            ["received"] = 109483.031,
+            ["assigned"] = "Dkmonkey",
+            ["itemID"] = 50262,
+            ["link"] = "|cffa335ee|Hitem:50262:0:0:0:0:0:0:305102456:80|h[Felglacier Bolter]|h|r",
+            ["choices"] = {
+                ["Aneeka"] = "disenchant",
+                ["Blizzy"] = "disenchant",
+                ["Evilplaque"] = "disenchant",
+                ["Lubov"] = "disenchant",
+                ["Dkmonkey"] = "disenchant",
+            },
+            ["rolls"] = {
+                ["Aneeka"] = "9",
+                ["Lubov"] = "40",
+                ["Evilplaque"] = "69",
+                ["Blizzy"] = "45",
+                ["Dkmonkey"] = "77",
+            },
+            ["texture"] = "Interface\\Icons\\inv_weapon_crossbow_30",
+        }, -- [10]
+        {
+            ["received"] = 109746.236,
+            ["assigned"] = "Blizzy",
+            ["itemID"] = 37780,
+            ["link"] = "|cff0070dd|Hitem:37780:0:0:0:0:0:0:1986751616:80|h[Condor-Bone Chestguard]|h|r",
+            ["choices"] = {
+                ["Aneeka"] = "greed",
+                ["Blizzy"] = "disenchant",
+                ["Evilplaque"] = "greed",
+                ["Lubov"] = "greed",
+                ["Dkmonkey"] = "greed",
+            },
+            ["rolls"] = {
+                ["Aneeka"] = "14",
+                ["Lubov"] = "22",
+                ["Evilplaque"] = "72",
+                ["Blizzy"] = "77",
+                ["Dkmonkey"] = "62",
+            },
+            ["texture"] = "Interface\\Icons\\INV_Chest_Chain_14",
+        }, -- [11]
+        {
+            ["received"] = 110173.528,
+            ["assigned"] = "Lubov",
+            ["itemID"] = 50272,
+            ["link"] = "|cffa335ee|Hitem:50272:0:0:0:0:0:0:349262944:80|h[Frost Wyrm Ribcage]|h|r",
+            ["choices"] = {
+                ["Aneeka"] = "greed",
+                ["Blizzy"] = "disenchant",
+                ["Evilplaque"] = "disenchant",
+                ["Lubov"] = "need",
+                ["Dkmonkey"] = "disenchant",
+            },
+            ["rolls"] = {
+                ["Lubov"] = "2",
+            },
+            ["texture"] = "Interface\\Icons\\inv_chest_plate23",
+        }, -- [12]
+        {
+            ["received"] = 110155.978,
+            ["assigned"] = "Lubov",
+            ["itemID"] = 50285,
+            ["link"] = "|cffa335ee|Hitem:50285:0:0:0:0:0:0:617698400:80|h[Icebound Bronze Cuirass]|h|r",
+            ["choices"] = {
+                ["Aneeka"] = "greed",
+                ["Blizzy"] = "disenchant",
+                ["Evilplaque"] = "disenchant",
+                ["Lubov"] = "need",
+                ["Dkmonkey"] = "disenchant",
+            },
+            ["rolls"] = {
+                ["Lubov"] = "25",
+            },
+            ["texture"] = "Interface\\Icons\\inv_chest_plate23",
+        }, -- [13]
+        {
+            ["received"] = 110154.673,
+            ["assigned"] = "Evilplaque",
+            ["itemID"] = 43102,
+            ["link"] = "|cff0070dd|Hitem:43102:0:0:0:0:0:0:1423004768:80|h[Frozen Orb]|h|r",
+            ["choices"] = {
+                ["Aneeka"] = "greed",
+                ["Lubov"] = "greed",
+                ["Evilplaque"] = "greed",
+                ["Blizzy"] = "greed",
+                ["Dkmonkey"] = "greed",
+            },
+            ["rolls"] = {
+                ["Aneeka"] = "83",
+                ["Blizzy"] = "96",
+                ["Evilplaque"] = "96",
+                ["Lubov"] = "60",
+                ["Dkmonkey"] = "15",
+            },
+            ["texture"] = "Interface\\Icons\\Spell_Frost_FrozenCore",
+        }, -- [14]
     }
     self:UpdateReport()
 end
---]]
+
 
 -- /dump NeedyGreedy:TestSuperFind()
 --[[
