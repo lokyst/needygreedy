@@ -64,7 +64,7 @@ local options = {
                     name = L["Expiry Time"],
                     desc = L["Minutes after item is received before it is removed from display (0 = forever)"],
                     type = "range",
-                    order = 60,
+                    order = 120,
                     min = 0,
                     max = 110,
                     step = 1,
@@ -75,7 +75,7 @@ local options = {
                     name = L["Minimum Quality"],
                     desc = L["Minimum quality of item to be displayed"],
                     type = "select",
-                    order = 120,
+                    order = 130,
                     values = {
                         [ITEM_QUALITY_UNCOMMON] = ITEM_QUALITY2_DESC,
                         [ITEM_QUALITY_RARE] = ITEM_QUALITY3_DESC,
@@ -113,7 +113,7 @@ local options = {
                     name = L["Minimap Icon"],
                     desc = L["Toggle the display of the minimap icon"],
                     type = "toggle",
-                    order = 40,
+                    order = 99,
                     get = "GetHideMinimapIcon",
                     set = "SetHideMinimapIcon",
                 },
@@ -159,6 +159,7 @@ local defaults = {
         minimap = { hide = false },
         filterLootMsgs = false,
         onlyShowInParty = false,
+        hideInCombat = false,
     }
 }
 
