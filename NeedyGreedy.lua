@@ -319,8 +319,9 @@ function NeedyGreedy:OnEnable()
 
     self:ScheduleRepeatingTimer("ExpireItems", 10)
 
-    -- Delay frame display so that player does not show as offline
+    -- Refresh display when class can be determined
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
+    self:RegisterEvent("UNIT_CLASSIFICATION_CHANGED", "PLAYER_ENTERING_WORLD")
 
     self:RegisterEvent("PLAYER_LEAVING_WORLD")
 
