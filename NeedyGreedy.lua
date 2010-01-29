@@ -941,7 +941,7 @@ function NeedyGreedy:ShowDetachedTooltip()
     end
 
     -- Fill in the info
-    self:PopulateReportTooltip(self.detachedTooltip)
+    self:BuildDetachedTooltip(self.detachedTooltip)
 
     if self.db.profile.detachedTooltip then
         -- To make tooltip detached
@@ -993,7 +993,6 @@ function NeedyGreedy:ShowDBTooltip(frame)
     -- Acquire a tooltip
     self.dbTooltip = LibQTip:Acquire("NeedyGreedyDBReport", 1, "LEFT")
 
-    self:AddHeaderText(self.dbTooltip)
     if not self.db.profile.detachedTooltip then
         if self:DisplayRollTableCheck() then
             -- Add columns here because tooltip:Clear() preserves columns
@@ -1002,10 +1001,13 @@ function NeedyGreedy:ShowDBTooltip(frame)
             end
 
             -- Fill in the info
-            self:PopulateReportTooltip(self.dbTooltip)
+            self:BuildDBReportTooltip(self.dbTooltip)
         end
+    else
+
+        self:AddHeaderText(self.dbTooltip)
+        self:AddInfoText(self.dbTooltip)
     end
-    self:AddInfoText(self.dbTooltip)
 
     if frame then self.dbTooltip:SmartAnchorTo(frame) end
 
@@ -1024,9 +1026,6 @@ end
 function NeedyGreedy:PopulateReportTooltip(tooltip)
     local nItems = self.db.profile.nItems
     local players = self:GetSortedPlayers()
-    tooltip:Clear()
-
-    self:AddHeaderText(tooltip)
 
     -- Verify that report.firstItem is set reasonably
     local sorted = self:SortRollids()
@@ -1127,11 +1126,6 @@ function NeedyGreedy:PopulateReportTooltip(tooltip)
         end
     end
     tooltip:AddLine(unpack(winnerTable))
-
-    -- Display left and right arrows if frame is detached
-    if self.db.profile.detachedTooltip then
-        self:AddPagerArrows(tooltip)
-    end
 end
 
 function NeedyGreedy:AddHeaderText(tooltip)
@@ -1203,17 +1197,29 @@ function NeedyGreedy:AddInfoText(tooltip)
     tooltip:SetCell(lineNum, 1, helpText, nil, tooltip:GetColumnCount())
 end
 
+function NeedyGreedy:BuildDetachedTooltip(tooltip)
+    tooltip:Clear()
+    self:AddHeaderText(tooltip)
+    self:PopulateReportTooltip(tooltip)
+    self:AddPagerArrows(tooltip)
+end
+
+function NeedyGreedy:BuildDBReportTooltip(tooltip)
+    tooltip:Clear()
+    self:AddHeaderText(tooltip)
+    self:PopulateReportTooltip(tooltip)
+    self:AddInfoText(tooltip)
+end
+
 function NeedyGreedy:UpdateReport()
     local tooltip = nil
     if self.detachedTooltip and self.detachedTooltip:IsShown() then
-        tooltip = self.detachedTooltip
+        self:BuildDetachedTooltip(self.detachedTooltip)
     elseif self.dbTooltip and self.dbTooltip:IsShown() and (not self.db.profile.detachedTooltip) then
-        tooltip = self.dbTooltip
+        self:BuildDBReportTooltip(self.dbTooltip)
     else
         return
     end
-
-    self:PopulateReportTooltip(tooltip)
 end
 
 function NeedyGreedy:RefreshTooltip()
