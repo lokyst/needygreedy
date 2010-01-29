@@ -2,6 +2,10 @@ NeedyGreedy = LibStub("AceAddon-3.0"):NewAddon("NeedyGreedy", "AceEvent-3.0", "A
 
 local L = LibStub("AceLocale-3.0"):GetLocale("NeedyGreedy", true)
 
+local report = {}
+local items = {}
+local nameList = {}
+
 -- Set up DataBroker object
 local NeedyGreedyLDB = LibStub("LibDataBroker-1.1"):NewDataObject("NeedyGreedy", {
     type = "launcher",
@@ -13,6 +17,7 @@ local NeedyGreedyLDB = LibStub("LibDataBroker-1.1"):NewDataObject("NeedyGreedy",
         elseif IsShiftKeyDown() then
             NeedyGreedy.db.profile.detachedTooltip = not NeedyGreedy.db.profile.detachedTooltip
             LibStub("AceConfigRegistry-3.0"):NotifyChange("NeedyGreedy")
+            report.firstItem = 1
             NeedyGreedy:HideDBTooltip()
             NeedyGreedy:ShowDBTooltip(frame)
             NeedyGreedy:HideDetachedTooltip()
@@ -34,10 +39,6 @@ local NeedyGreedyLDB = LibStub("LibDataBroker-1.1"):NewDataObject("NeedyGreedy",
     end,
 })
 local ngDBIcon = LibStub("LibDBIcon-1.0")
-
-local report = {}
-local items = {}
-local nameList = {}
 
 -- Set up configuration window
 local options = {
