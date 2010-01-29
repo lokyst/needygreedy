@@ -304,7 +304,7 @@ function NeedyGreedy:OnInitialize()
     ACD:AddToBlizOptions("NeedyGreedy", L["Profile"], "NeedyGreedy", "profile")
     self:RegisterChatCommand("needygreedy", function() InterfaceOptionsFrame_OpenToCategory("NeedyGreedy") end)
     self:RegisterChatCommand("ng", function() InterfaceOptionsFrame_OpenToCategory("NeedyGreedy") end)
-    self:RegisterChatCommand("ngt", "TestItemList")
+    -- self:RegisterChatCommand("ngt", "TestItemList")
     self.items = items
 
     -- Register the minimap icon
@@ -777,7 +777,7 @@ function NeedyGreedy:ExpireItems()
     for rollid, record in pairs(items) do
         if record.received > 0 and now - record.received >= self.db.profile.expiry * 60 then
             items[rollid] = nil
-            wipte(nameList)
+            wipe(nameList)
             update = true
         end
     end
@@ -1330,11 +1330,11 @@ end
 
 
 -- Unit tests
+--[[
 function NeedyGreedy:SetItems(itemList)
     items = itemList
     self:UpdateReport()
 end
-
 
 function NeedyGreedy:TestItemList()
     items = {
