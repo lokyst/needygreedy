@@ -38,5 +38,7 @@ L["Hide in combat"] = true
 L["Only display the roll window when not in combat"] = true
 L["Hide Non-Members"] =  true
 L["Only display the names of members currently in your party"] = true
+L["Valid commands are: config, report"] = true
+L["Nothing to report"] = true
 
 end

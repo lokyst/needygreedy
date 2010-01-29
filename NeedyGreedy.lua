@@ -303,9 +303,8 @@ function NeedyGreedy:OnInitialize()
     local ACD = LibStub("AceConfigDialog-3.0")
     ACD:AddToBlizOptions("NeedyGreedy", "NeedyGreedy", nil, "general")
     ACD:AddToBlizOptions("NeedyGreedy", L["Profile"], "NeedyGreedy", "profile")
-    self:RegisterChatCommand("needygreedy", function() InterfaceOptionsFrame_OpenToCategory("NeedyGreedy") end)
-    self:RegisterChatCommand("ng", function() InterfaceOptionsFrame_OpenToCategory("NeedyGreedy") end)
-    -- self:RegisterChatCommand("ngt", "TestItemList")
+    self:RegisterChatCommand("needygreedy", "ProcessSlashCommands")
+    self:RegisterChatCommand("ng", "ProcessSlashCommands")
     self.items = items
 
     -- Register the minimap icon
@@ -1331,6 +1330,59 @@ function NeedyGreedy:ResetShowLootSpam()
     if originalSpamFilterSetting then
         SetCVar("showLootSpam", originalSpamFilterSetting)
         originalSpamFilterSetting = nil
+    end
+end
+
+
+
+-- Console commands
+function NeedyGreedy:ProcessSlashCommands(input)
+    if input == "report" then
+        self:PrintReport()
+    elseif input == "config" then
+        InterfaceOptionsFrame_OpenToCategory("NeedyGreedy")
+    else
+        self:Print(L["Valid commands are: config, report"])
+    end
+end
+
+function NeedyGreedy:PrintReport()
+    if #items == 0 then self:Print(L["Nothing to report"]) return end
+    local output = {}
+
+    for rollID, item in pairs(items) do
+        for name, choice in pairs(item.choices) do
+            if not output[name] then
+                output[name] = {
+                    ["name"] = name,
+                    ["need"] = 0,
+                    ["greed"] = 0,
+                    ["disenchant"] = 0,
+                    ["pass"] = 0,
+                    ["assigned"] = 0,
+                }
+            end
+
+            for k, v in pairs(output[name]) do
+                if choice == k then
+                    output[name][k] = v + 1
+                end
+            end
+
+            if item.assigned == name then
+                output[name]["assigned"] = output[name]["assigned"] + 1
+            end
+        end
+    end
+
+    local sorted = {}
+    for _, record in pairs(output) do
+        table.insert(sorted, record)
+    end
+    table.sort(sorted, function(a,b) return b.assigned < a.assigned end)
+
+    for _, info in ipairs(sorted) do
+        self:Printf("%s N:%d G:%d DE:%d P:%d Wins:%d", info.name, info.need, info.greed, info.disenchant, info.pass, info.assigned)
     end
 end
 
