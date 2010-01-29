@@ -1207,7 +1207,7 @@ function NeedyGreedy:UpdateReport()
     local tooltip = nil
     if self.detachedTooltip and self.detachedTooltip:IsShown() then
         tooltip = self.detachedTooltip
-    elseif self.dbTooltip and self.dbTooltip:IsShown() then
+    elseif self.dbTooltip and self.dbTooltip:IsShown() and (not self.db.profile.detachedTooltip) then
         tooltip = self.dbTooltip
     else
         return
