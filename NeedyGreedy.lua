@@ -174,7 +174,7 @@ local defaults = {
     }
 }
 
--- Icon textures for Need/Greed/Pass/DE
+-- Icon textures
 local iconSize = 27
 local NEEDYGREEDY_CHOICE = {
     ["need"] = {
@@ -195,6 +195,13 @@ local NEEDYGREEDY_CHOICE = {
     }
 }
 local BLANK_ICON = "|T:27|t"
+local CLOSE_ICON = "|TInterface\\Buttons\\UI-Panel-MinimizeButton-Up:" .. iconSize .. "|t"
+local PAGER_ICONS = {
+    leftUp = "|TInterface\\Buttons\\UI-SpellbookIcon-PrevPage-Up:" .. iconSize .. "|t",
+    leftDisabled = "|TInterface\\Buttons\\UI-SpellbookIcon-PrevPage-Disabled:" .. iconSize .. "|t",
+    rightUp = "|TInterface\\Buttons\\UI-SpellbookIcon-NextPage-Up:" .. iconSize .. "|t",
+    rightDisabled = "|TInterface\\Buttons\\UI-SpellbookIcon-NextPage-Disabled:" .. iconSize .. "|t",
+}
 
 -- Funky colors for text strings
 local yC = "|cffFFCC00" -- Golden
@@ -1131,7 +1138,12 @@ end
 function NeedyGreedy:AddHeaderText(tooltip)
     local headerText = yC .. "NeedyGreedy|r"
     local lineNum = tooltip:AddLine("")
-    tooltip:SetCell(lineNum, 1, headerText, tooltip:GetHeaderFont(), tooltip:GetColumnCount())
+    tooltip:SetCell(lineNum, 1, headerText, tooltip:GetHeaderFont(), tooltip:GetColumnCount() - 1)
+
+    if self.detachedTooltip and tooltip == self.detachedTooltip then
+        tooltip:SetCell(lineNum, tooltip:GetColumnCount(), CLOSE_ICON)
+        tooltip:SetCellScript(lineNum, tooltip:GetColumnCount(),"OnMouseUp", function() self:ToggleDisplay() end)
+    end
 
     tooltip:AddLine("")
 end
@@ -1144,17 +1156,17 @@ function NeedyGreedy:AddPagerArrows(tooltip)
     local colNum = nItems + 2
 
     if report.firstItem > 1 then
-        tooltip:SetCell(lineNum, colNum, "|TInterface\\Buttons\\UI-SpellbookIcon-PrevPage-Up:" .. iconSize .. "|t")
+        tooltip:SetCell(lineNum, colNum, PAGER_ICONS.leftUp)
         tooltip:SetCellScript(lineNum, colNum, "OnMouseUp", function() self:PageLeft() end)
     else
-        tooltip:SetCell(lineNum, colNum, "|TInterface\\Buttons\\UI-SpellbookIcon-PrevPage-Disabled:" .. iconSize .. "|t")
+        tooltip:SetCell(lineNum, colNum, PAGER_ICONS.leftDisabled)
     end
 
     if report.firstItem + nItems - 1 < count then
-        tooltip:SetCell(lineNum, colNum + 1, "|TInterface\\Buttons\\UI-SpellbookIcon-NextPage-Up:" .. iconSize .. "|t")
+        tooltip:SetCell(lineNum, colNum + 1, PAGER_ICONS.rightUp)
         tooltip:SetCellScript(lineNum, colNum + 1, "OnMouseUp", function() self:PageRight() end)
     else
-        tooltip:SetCell(lineNum, colNum + 1, "|TInterface\\Buttons\\UI-SpellbookIcon-NextPage-Disabled:" .. iconSize .. "|t")
+        tooltip:SetCell(lineNum, colNum + 1, PAGER_ICONS.rightDisabled)
     end
 
     -- Set the page # text
