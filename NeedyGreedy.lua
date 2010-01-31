@@ -312,7 +312,6 @@ function NeedyGreedy:OnInitialize()
     ACD:AddToBlizOptions("NeedyGreedy", L["Profile"], "NeedyGreedy", "profile")
     self:RegisterChatCommand("needygreedy", "ProcessSlashCommands")
     self:RegisterChatCommand("ng", "ProcessSlashCommands")
-    self.items = items
 
     -- Register the minimap icon
     ngDBIcon:Register("NeedyGreedy", NeedyGreedyLDB, self.db.profile.minimap)
