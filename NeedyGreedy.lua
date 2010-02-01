@@ -21,7 +21,7 @@ local NeedyGreedyLDB = LibStub("LibDataBroker-1.1"):NewDataObject("NeedyGreedy",
             NeedyGreedy:HideDBTooltip()
             NeedyGreedy:ShowDBTooltip(frame)
             NeedyGreedy:HideDetachedTooltip()
-            if NeedyGreedy.db.profile.detachedTooltip then
+            if NeedyGreedy.db.profile.detachedTooltip and NeedyGreedy:DisplayDetachedTTCheck() then
                 NeedyGreedy:ShowDetachedTooltip()
             end
         elseif IsAltKeyDown() then
