@@ -16,7 +16,6 @@ L["Detach Tooltip"] = true
 L["Display the roll information in a standalone window"] = true
 L["Item Names"] = true
 L["Toggle the display of the item name in the header"] = true
-L["None"] = true
 L["%d of %d"] = true
 L["%d-%d of %d"] = true
 L["Click"] = true
