@@ -21,8 +21,11 @@ local NeedyGreedyLDB = LibStub("LibDataBroker-1.1"):NewDataObject("NeedyGreedy",
             NeedyGreedy:HideDBTooltip()
             NeedyGreedy:ShowDBTooltip(frame)
             NeedyGreedy:HideDetachedTooltip()
-            if NeedyGreedy.db.profile.detachedTooltip and NeedyGreedy:DisplayDetachedTTCheck() then
-                NeedyGreedy:ShowDetachedTooltip()
+            if NeedyGreedy.db.profile.detachedTooltip then
+                NeedyGreedy.detachedTooltipDisplayStatus = true
+                if NeedyGreedy:CheckDisplayOptions() then
+                    NeedyGreedy:ShowDetachedTooltip()
+                end
             end
         elseif IsAltKeyDown() then
             NeedyGreedy:ClearItems()
@@ -143,6 +146,14 @@ local options = {
                             get = "GetDetachedTooltip",
                             set = "SetDetachedTooltip",
                         },
+                        autoPopUp = {
+                            name = L["Popup when rolling"],
+                            desc = L["Automatically show the detached tooltip when an item is being rolled on"],
+                            type = "toggle",
+                            order = 11,
+                            get = "GetAutoPopUp",
+                            set = "SetAutoPopUp",
+                        },
                         onlyShowInParty = {
                             name = L["Show only in party"],
                             desc = L["Only display the detached window when in a party"],
@@ -224,6 +235,11 @@ local originalSpamFilterSetting = nil
 
 -- For tracking combat status
 local IS_IN_COMBAT = nil
+
+-- We track rolling on items like this to avoid the scenario where you're in
+-- combat the window pops up, you leave combat briefly before another add
+-- attacks and the window disappears as you're deciding
+local ITEM_IS_BEING_ROLLED_ON = nil
 
 -- Utility functions
 local function sanitizePattern(pattern)
@@ -363,21 +379,17 @@ function NeedyGreedy:OnDisable()
 end
 
 function NeedyGreedy:PLAYER_ENTERING_WORLD()
-    if self.db.profile.detachedTooltip and self.db.profile.detachedIsShown and
-        self:DisplayDetachedTTCheck() then
-        self:ShowDetachedTooltip()
+    wipe(nameList)
+    if self.db.profile.detachedTooltip then
+        if self:DisplayDetachedTTCheck() then
+            self:RefreshTooltip()
+        end
     end
 
     self:SetShowLootSpam()
 end
 
 function NeedyGreedy:PLAYER_LEAVING_WORLD()
-    if self.detachedTooltip and self.detachedTooltip:IsShown() then
-        self.db.profile.detachedIsShown = true
-    elseif self.detachedTooltip then
-        self.db.profile.detachedIsShown = false
-    end
-
     self:ResetShowLootSpam()
 end
 
@@ -412,6 +424,12 @@ function NeedyGreedy:START_LOOT_ROLL(event, rollid)
             choices = {},
             rolls = {}
         }
+
+        if self.db.profile.detachedTooltip and self.db.profile.autoPopUp then
+            ITEM_IS_BEING_ROLLED_ON = true
+            self:ShowDetachedTooltip()
+        end
+
         self:UpdateReport()
     end
 end
@@ -639,7 +657,26 @@ function NeedyGreedy:RecordReceived(link, player)
             -- would have automatically received the item anyway.
             if record.choices[player] == "disenchant" and record.assigned == player and record.received == 0 then
                 record.received = GetTime()
+                -- It's ok to put in the break since each disenchanted
+                -- result will trigger a received message
+                break
             end
+        end
+    end
+
+    -- This could be done in one of the other loops, but since I live with
+    -- pedantic man, we will do this as a separate scan
+    if ITEM_IS_BEING_ROLLED_ON then
+        local itemsStillBeingRolledOn = 0
+        for _, record in pairs(items) do
+            if record.received == 0 then
+                itemsStillBeingRolledOn = itemsStillBeingRolledOn + 1
+            end
+        end
+
+        if itemsStillBeingRolledOn == 0 then
+            ITEM_IS_BEING_ROLLED_ON = false
+            self:RefreshTooltip()
         end
     end
 
@@ -868,9 +905,13 @@ end
 
 function NeedyGreedy:SetDetachedTooltip(info, detachedTooltip)
     self.db.profile.detachedTooltip = detachedTooltip
-    if self.db.profile.detachedTooltip and self:DisplayDetachedTTCheck() then
-        self:ShowDetachedTooltip()
+    if self.db.profile.detachedTooltip then
+        self.db.profile.detachedTooltipDisplayStatus = true
+        if self:CheckDisplayOptions() then
+            self:ShowDetachedTooltip()
+        end
     else
+        self.db.profile.detachedTooltipDisplayStatus = false
         self:HideDetachedTooltip()
         -- Return to page one
         report.firstItem = 1
@@ -937,6 +978,15 @@ end
 function NeedyGreedy:SetShowGroupOnly(info, showGroupOnly)
     self.db.profile.showGroupOnly = showGroupOnly
     wipe(nameList)
+    self:RefreshTooltip()
+end
+
+function NeedyGreedy:GetAutoPopUp(info)
+    return self.db.profile.autoPopUp
+end
+
+function NeedyGreedy:SetAutoPopUp(info, autoPopUp)
+    self.db.profile.autoPopUp = autoPopUp
     self:RefreshTooltip()
 end
 
@@ -1262,15 +1312,32 @@ end
 function NeedyGreedy:ToggleDisplay()
     if not self.db.profile.detachedTooltip then return end
 
+    -- Don't toggle display status if we can't see anything to toggle
     if self.detachedTooltip and self.detachedTooltip:IsShown() then
         self:HideDetachedTooltip()
-    elseif self:DisplayDetachedTTCheck() then
+        self.db.profile.detachedTooltipDisplayStatus = false
+    elseif self:CheckDisplayOptions() then
         self:ShowDetachedTooltip()
+        self.db.profile.detachedTooltipDisplayStatus = true
     end
 
 end
 
+-- Only use this when not forcing display e.g. RefreshTooltip
 function NeedyGreedy:DisplayDetachedTTCheck()
+    if self.db.profile.autoPopUp and ITEM_IS_BEING_ROLLED_ON then
+        return true
+    end
+
+    if not self.db.profile.detachedTooltipDisplayStatus then
+        return false
+    end
+
+    return self:CheckDisplayOptions()
+end
+
+-- Use this when forcing display of detached tooltip
+function NeedyGreedy:CheckDisplayOptions()
     if self:CheckOnlyShowInParty() and self:CheckShowInCombat() then
         return true
     end
@@ -1417,7 +1484,7 @@ end
 
 
 -- Unit tests
-
+--[[
 function NeedyGreedy:SetItems(itemList)
     items = itemList
     self:UpdateReport()

@@ -39,5 +39,7 @@ L["Hide Non-Members"] =  true
 L["Only display the names of members currently in your party"] = true
 L["Valid commands are: config, report"] = true
 L["Nothing to report"] = true
+L["Popup when rolling"] = true
+L["Automatically show the detached tooltip when an item is being rolled on"] = true
 
 end
