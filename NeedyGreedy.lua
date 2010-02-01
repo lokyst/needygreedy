@@ -943,7 +943,6 @@ function NeedyGreedy:ShowDetachedTooltip()
 
         -- Add two columns for left and right buttons if detached
         if self.db.profile.detachedTooltip then
-            self.detachedTooltip:AddColumn("RIGHT")
             self.detachedTooltip:AddColumn("LEFT")
         end
 
@@ -1156,13 +1155,13 @@ function NeedyGreedy:AddPagerArrows(tooltip)
     local count = self:CountItems()
 
     local lineNum, _ = tooltip:AddLine("")
-    local colNum = nItems + 2
+    local colNum = nItems + 1
 
     if report.firstItem > 1 then
-        tooltip:SetCell(lineNum, colNum, PAGER_ICONS.leftUp)
+        tooltip:SetCell(lineNum, colNum, PAGER_ICONS.leftUp, nil, "RIGHT")
         tooltip:SetCellScript(lineNum, colNum, "OnMouseUp", function() self:PageLeft() end)
     else
-        tooltip:SetCell(lineNum, colNum, PAGER_ICONS.leftDisabled)
+        tooltip:SetCell(lineNum, colNum, PAGER_ICONS.leftDisabled, nil, "RIGHT")
     end
 
     if report.firstItem + nItems - 1 < count then
@@ -1174,10 +1173,10 @@ function NeedyGreedy:AddPagerArrows(tooltip)
 
     -- Set the page # text
     local pageText = ""
-    if nItems == 1 then
+    if nItems == 1 and count > 0 then
         pageText = tostring(report.firstItem)
     elseif count == 0 then
-        pageText = L["None"]
+        pageText = ""
     elseif count == 1 or report.firstItem == count then
         pageText = string.format(L["%d of %d"], report.firstItem, count)
     else
@@ -1188,7 +1187,7 @@ function NeedyGreedy:AddPagerArrows(tooltip)
         pageText = string.format(L["%d-%d of %d"], report.firstItem, lastitem, count)
     end
 
-    tooltip:SetCell(lineNum, colNum - 1, yC .. pageText)
+    tooltip:SetCell(lineNum, colNum - 1, yC .. pageText, nil, "RIGHT")
 end
 
 function NeedyGreedy:AddInfoText(tooltip)
