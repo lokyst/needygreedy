@@ -22,7 +22,6 @@ local NeedyGreedyLDB = LibStub("LibDataBroker-1.1"):NewDataObject("NeedyGreedy",
             NeedyGreedy:ShowDBTooltip(frame)
             NeedyGreedy:HideDetachedTooltip()
             if NeedyGreedy.db.profile.detachedTooltip then
-                NeedyGreedy.db.profile.displayDetached = true
                 NeedyGreedy:ShowDetachedTooltip()
             end
         elseif IsAltKeyDown() then
@@ -165,7 +164,7 @@ local defaults = {
         displayIcons = true,
         detachedTooltip = false,
         displayTextLink = false,
-        displayDetached = false,
+        detachedIsShown = false,
         minimap = { hide = false },
         filterLootMsgs = false,
         onlyShowInParty = false,
@@ -352,7 +351,8 @@ function NeedyGreedy:OnDisable()
 end
 
 function NeedyGreedy:PLAYER_ENTERING_WORLD()
-    if self.db.profile.displayDetached and self.db.profile.detachedTooltip then
+    if self.db.profile.detachedTooltip and self.db.profile.detachedIsShown and
+        self:DisplayDetachedTTCheck() then
         self:ShowDetachedTooltip()
     end
 
@@ -360,6 +360,12 @@ function NeedyGreedy:PLAYER_ENTERING_WORLD()
 end
 
 function NeedyGreedy:PLAYER_LEAVING_WORLD()
+    if self.detachedTooltip and self.detachedTooltip:IsShown() then
+        self.db.profile.detachedIsShown = true
+    elseif self.detachedTooltip then
+        self.db.profile.detachedIsShown = false
+    end
+
     self:ResetShowLootSpam()
 end
 
@@ -850,11 +856,9 @@ end
 
 function NeedyGreedy:SetDetachedTooltip(info, detachedTooltip)
     self.db.profile.detachedTooltip = detachedTooltip
-    if detachedTooltip then
-        self.db.profile.displayDetached = true
+    if self.db.profile.detachedTooltip and self:DisplayDetachedTTCheck() then
         self:ShowDetachedTooltip()
     else
-        self.db.profile.displayDetached = false
         self:HideDetachedTooltip()
         -- Return to page one
         report.firstItem = 1
@@ -930,7 +934,6 @@ end
 local LibQTip = LibStub('LibQTip-1.0')
 
 function NeedyGreedy:ShowDetachedTooltip()
-    if not self:DisplayRollTableCheck() then return end
 
     -- Acquire a tooltip
     if not LibQTip:IsAcquired("NeedyGreedyReport") then
@@ -1002,15 +1005,13 @@ function NeedyGreedy:ShowDBTooltip(frame)
         self.dbTooltip = LibQTip:Acquire("NeedyGreedyDBReport", 1, "LEFT")
 
         if not self.db.profile.detachedTooltip then
-            if self:DisplayRollTableCheck() then
-                -- Add columns here because tooltip:Clear() preserves columns
-                for i = 1, self.db.profile.nItems do
-                    self.dbTooltip:AddColumn("LEFT")
-                end
-
-                -- Fill in the info
-                self:BuildDBReportTooltip(self.dbTooltip)
+            -- Add columns here because tooltip:Clear() preserves columns
+            for i = 1, self.db.profile.nItems do
+                self.dbTooltip:AddColumn("LEFT")
             end
+
+            -- Fill in the info
+            self:BuildDBReportTooltip(self.dbTooltip)
         else
 
             self:AddHeaderText(self.dbTooltip)
@@ -1194,7 +1195,7 @@ function NeedyGreedy:AddInfoText(tooltip)
     local lineNum
     local helpText
 
-    if self.db.profile.onlyShowInParty and not self:CheckOnlyShowInParty() then
+    if self.db.profile.detachedTooltip and not self:CheckOnlyShowInParty() then
         lineNum = tooltip:AddLine()
         tooltip:SetCell(lineNum, 1, L["You are not in a party"], nil, tooltip:GetColumnCount())
     end
@@ -1237,9 +1238,11 @@ function NeedyGreedy:UpdateReport()
 end
 
 function NeedyGreedy:RefreshTooltip()
-    if self.db.profile.detachedTooltip and self.db.profile.displayDetached then
+    if self.db.profile.detachedTooltip and self:DisplayDetachedTTCheck() then
         self:HideDetachedTooltip()
         self:ShowDetachedTooltip()
+    else
+        self:HideDetachedTooltip()
     end
     self:HideDBTooltip()
 end
@@ -1247,16 +1250,15 @@ end
 function NeedyGreedy:ToggleDisplay()
     if not self.db.profile.detachedTooltip then return end
 
-    if self.db.profile.displayDetached then
+    if self.detachedTooltip and self.detachedTooltip:IsShown() then
         self:HideDetachedTooltip()
-    else
+    elseif self:DisplayDetachedTTCheck() then
         self:ShowDetachedTooltip()
     end
 
-    self.db.profile.displayDetached = not self.db.profile.displayDetached
 end
 
-function NeedyGreedy:DisplayRollTableCheck()
+function NeedyGreedy:DisplayDetachedTTCheck()
     if self:CheckOnlyShowInParty() and self:CheckShowInCombat() then
         return true
     end
@@ -1403,7 +1405,7 @@ end
 
 
 -- Unit tests
---[[
+
 function NeedyGreedy:SetItems(itemList)
     items = itemList
     self:UpdateReport()
