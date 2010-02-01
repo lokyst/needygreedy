@@ -49,6 +49,7 @@ local options = {
         general = {
             name = L['General'],
             type = 'group',
+            childGroups = "tab",
             args = {
                 nItems = {
                     name = L["Display Items"],
@@ -94,14 +95,6 @@ local options = {
                     get = "GetDisplayIcons",
                     set = "SetDisplayIcons",
                 },
-                detachedTooltip = {
-                    name = L["Detach Tooltip"],
-                    desc = L["Display the roll information in a standalone window"],
-                    type = "toggle",
-                    order = 10,
-                    get = "GetDetachedTooltip",
-                    set = "SetDetachedTooltip",
-                },
                 displayTextLink = {
                     name = L["Item Names"],
                     desc = L["Toggle the display of the item name in the header"],
@@ -117,6 +110,7 @@ local options = {
                     order = 99,
                     get = "GetHideMinimapIcon",
                     set = "SetHideMinimapIcon",
+                    width = "full"
                 },
                 filterLootMsgs = {
                     name = L["Filter Loot Messages"],
@@ -126,22 +120,6 @@ local options = {
                     get = "GetFilterLootMsgs",
                     set = "SetFilterLootMsgs",
                 },
-                onlyShowInParty = {
-                    name = L["Show only in party"],
-                    desc = L["Only display the roll window when in a party"],
-                    type = "toggle",
-                    order = 50,
-                    get = "GetOnlyShowInParty",
-                    set = "SetOnlyShowInParty",
-                },
-                hideInCombat = {
-                    name = L["Hide in combat"],
-                    desc = L["Only display the roll window when not in combat"],
-                    type = "toggle",
-                    order = 60,
-                    get = "GetHideInCombat",
-                    set = "SetHideInCombat",
-                },
                 showGroupOnly = {
                     name = L["Hide Non-Members"],
                     desc = L["Only display the names of members currently in your party"],
@@ -150,6 +128,40 @@ local options = {
                     get = "GetShowGroupOnly",
                     set = "SetShowGroupOnly",
                 },
+
+                detachedTooltipOptions = {
+                    name = "Detached Tooltip options",
+                    type = "group",
+                    --inline = true,
+                    order = 200,
+                    args = {
+                        detachedTooltip = {
+                            name = L["Detach Tooltip"],
+                            desc = L["Display the roll information in a standalone window"],
+                            type = "toggle",
+                            order = 10,
+                            get = "GetDetachedTooltip",
+                            set = "SetDetachedTooltip",
+                        },
+                        onlyShowInParty = {
+                            name = L["Show only in party"],
+                            desc = L["Only display the detached window when in a party"],
+                            type = "toggle",
+                            order = 12,
+                            get = "GetOnlyShowInParty",
+                            set = "SetOnlyShowInParty",
+                        },
+                        hideInCombat = {
+                            name = L["Hide in combat"],
+                            desc = L["Only display the detached window when not in combat"],
+                            type = "toggle",
+                            order = 14,
+                            get = "GetHideInCombat",
+                            set = "SetHideInCombat",
+                        },
+                    },
+                },
+
             },
         },
     }
