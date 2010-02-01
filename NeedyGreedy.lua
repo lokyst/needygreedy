@@ -933,54 +933,56 @@ function NeedyGreedy:ShowDetachedTooltip()
     if not self:DisplayRollTableCheck() then return end
 
     -- Acquire a tooltip
-    self.detachedTooltip = LibQTip:Acquire("NeedyGreedyReport", 1, "LEFT")
+    if not LibQTip:IsAcquired("NeedyGreedyReport") then
+        self.detachedTooltip = LibQTip:Acquire("NeedyGreedyReport", 1, "LEFT")
 
-    -- Add columns here because tooltip:Clear() preserves columns
-    for i = 1, self.db.profile.nItems do
-        self.detachedTooltip:AddColumn("LEFT")
-    end
-
-    -- Add two columns for left and right buttons if detached
-    if self.db.profile.detachedTooltip then
-        self.detachedTooltip:AddColumn("RIGHT")
-        self.detachedTooltip:AddColumn("LEFT")
-    end
-
-    -- Fill in the info
-    self:BuildDetachedTooltip(self.detachedTooltip)
-
-    if self.db.profile.detachedTooltip then
-        -- To make tooltip detached
-        self.detachedTooltip:ClearAllPoints()
-        self.detachedTooltip:SetFrameStrata("FULLSCREEN")
-        self.detachedTooltip:EnableMouse(true)
-        self.detachedTooltip:SetResizable(true)
-        self.detachedTooltip:SetFrameLevel(1)
-        self.detachedTooltip:SetMovable(true)
-        self.detachedTooltip:SetClampedToScreen(true)
-
-        if not self.db.profile.reportFramePos then
-            self.db.profile.reportFramePos = {
-                anchor1 = "CENTER",
-                anchor2 = "CENTER",
-                x = 0,
-                y = 0
-            }
+        -- Add columns here because tooltip:Clear() preserves columns
+        for i = 1, self.db.profile.nItems do
+            self.detachedTooltip:AddColumn("LEFT")
         end
-        self.detachedTooltip:SetPoint(self.db.profile.reportFramePos.anchor1, nil, self.db.profile.reportFramePos.anchor2,
-            self.db.profile.reportFramePos.x, self.db.profile.reportFramePos.y)
 
-        -- Make it move !
-        self.detachedTooltip:SetScript("OnMouseDown", function() self.detachedTooltip:StartMoving() end)
-        self.detachedTooltip:SetScript("OnMouseUp", function()
-            -- Make it remember
-            self.detachedTooltip:StopMovingOrSizing()
-            local anchor1, _, anchor2, x, y = self.detachedTooltip:GetPoint()
-            self.db.profile.reportFramePos.anchor1 = anchor1
-            self.db.profile.reportFramePos.anchor2 = anchor2
-            self.db.profile.reportFramePos.x = x
-            self.db.profile.reportFramePos.y = y
-        end)
+        -- Add two columns for left and right buttons if detached
+        if self.db.profile.detachedTooltip then
+            self.detachedTooltip:AddColumn("RIGHT")
+            self.detachedTooltip:AddColumn("LEFT")
+        end
+
+        -- Fill in the info
+        self:BuildDetachedTooltip(self.detachedTooltip)
+
+        if self.db.profile.detachedTooltip then
+            -- To make tooltip detached
+            self.detachedTooltip:ClearAllPoints()
+            self.detachedTooltip:SetFrameStrata("FULLSCREEN")
+            self.detachedTooltip:EnableMouse(true)
+            self.detachedTooltip:SetResizable(true)
+            self.detachedTooltip:SetFrameLevel(1)
+            self.detachedTooltip:SetMovable(true)
+            self.detachedTooltip:SetClampedToScreen(true)
+
+            if not self.db.profile.reportFramePos then
+                self.db.profile.reportFramePos = {
+                    anchor1 = "CENTER",
+                    anchor2 = "CENTER",
+                    x = 0,
+                    y = 0
+                }
+            end
+            self.detachedTooltip:SetPoint(self.db.profile.reportFramePos.anchor1, nil, self.db.profile.reportFramePos.anchor2,
+                self.db.profile.reportFramePos.x, self.db.profile.reportFramePos.y)
+
+            -- Make it move !
+            self.detachedTooltip:SetScript("OnMouseDown", function() self.detachedTooltip:StartMoving() end)
+            self.detachedTooltip:SetScript("OnMouseUp", function()
+                -- Make it remember
+                self.detachedTooltip:StopMovingOrSizing()
+                local anchor1, _, anchor2, x, y = self.detachedTooltip:GetPoint()
+                self.db.profile.reportFramePos.anchor1 = anchor1
+                self.db.profile.reportFramePos.anchor2 = anchor2
+                self.db.profile.reportFramePos.x = x
+                self.db.profile.reportFramePos.y = y
+            end)
+        end
     end
 
     -- Show it, et voilà !
@@ -997,25 +999,27 @@ end
 
 function NeedyGreedy:ShowDBTooltip(frame)
     -- Acquire a tooltip
-    self.dbTooltip = LibQTip:Acquire("NeedyGreedyDBReport", 1, "LEFT")
+    if not LibQTip:IsAcquired("NeedyGreedyDBReport") then
+        self.dbTooltip = LibQTip:Acquire("NeedyGreedyDBReport", 1, "LEFT")
 
-    if not self.db.profile.detachedTooltip then
-        if self:DisplayRollTableCheck() then
-            -- Add columns here because tooltip:Clear() preserves columns
-            for i = 1, self.db.profile.nItems do
-                self.dbTooltip:AddColumn("LEFT")
+        if not self.db.profile.detachedTooltip then
+            if self:DisplayRollTableCheck() then
+                -- Add columns here because tooltip:Clear() preserves columns
+                for i = 1, self.db.profile.nItems do
+                    self.dbTooltip:AddColumn("LEFT")
+                end
+
+                -- Fill in the info
+                self:BuildDBReportTooltip(self.dbTooltip)
             end
+        else
 
-            -- Fill in the info
-            self:BuildDBReportTooltip(self.dbTooltip)
+            self:AddHeaderText(self.dbTooltip)
+            self:AddInfoText(self.dbTooltip)
         end
-    else
 
-        self:AddHeaderText(self.dbTooltip)
-        self:AddInfoText(self.dbTooltip)
+        if frame then self.dbTooltip:SmartAnchorTo(frame) end
     end
-
-    if frame then self.dbTooltip:SmartAnchorTo(frame) end
 
     -- Show it, et voilà !
     self.dbTooltip:Show()
