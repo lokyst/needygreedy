@@ -992,9 +992,53 @@ end
 
 
 
--- Detachable QTip Frames
+-- QTip Frames
 local LibQTip = LibStub('LibQTip-1.0')
 
+-- Special cell provider for displaying item icons
+local ItemCell, ItemCell_Prototype = LibQTip:CreateCellProvider()
+function ItemCell_Prototype:InitializeCell()
+	self:SetHeight(40)
+
+	if not self.ItemDetailsBorder then
+		self.ItemDetailsBorder = self:CreateTexture(nil, 'ARTWORK')
+	end
+
+	self.ItemDetailsBorder:SetTexture(nil)
+	self.ItemDetailsBorder:SetAlpha(1)
+	self.ItemDetailsBorder:SetHeight(27)
+	self.ItemDetailsBorder:SetWidth(27)
+	self.ItemDetailsBorder:SetPoint("CENTER", self, "CENTER")
+
+	if not self.ItemDetails then
+		self.ItemDetails = self:CreateTexture(nil,"OVERLAY")
+	end
+
+	self.ItemDetails:SetTexture(nil)
+	self.ItemDetails:SetWidth(22)
+	self.ItemDetails:SetHeight(22)
+	self.ItemDetails:SetPoint("CENTER", self.ItemDetailsBorder, "CENTER")
+
+end
+
+function ItemCell_Prototype:SetupCell(tooltip, value, justification, font, args)
+    local icon, quality = unpack(value)
+	self.ItemDetails:SetTexture(icon)
+
+    if quality then
+        local color = {r, g, b, hex}
+        color.r, color.g, color.b, color.hex = GetItemQualityColor(quality)
+        self.ItemDetailsBorder:SetTexture(color.r, color.g, color.b, 0.8)
+    else
+        self.ItemDetailsBorder:SetTexture("Interface\\BUTTONS\\UI-EmptySlot-Disabled")
+    end
+
+	self.ItemDetailsBorder:Show()
+
+	return self.ItemDetailsBorder:GetWidth(), self:GetHeight()
+end
+
+-- Detachable tooltip
 function NeedyGreedy:ShowDetachedTooltip()
 
     -- Acquire a tooltip
@@ -1119,9 +1163,11 @@ function NeedyGreedy:PopulateReportTooltip(tooltip)
         if index <= count then
             local rollID = sorted[index]
             item = items[rollID]
-            texture = "|T" .. item.texture .. ":40|t"
         end
-        tooltip:SetCell(headerline, i + 1, texture, nil, "CENTER", nil, nil, nil, nil, nil, 60)
+
+        -- Placeholder icons
+        tooltip:SetCell(headerline, i + 1, {}, nil, nil, nil, ItemCell, nil, nil, nil, 60)
+
         if item then
             tooltip:SetCellScript(headerline, i + 1, "OnEnter", function()
                 GameTooltip:SetOwner(tooltip, "ANCHOR_RIGHT")
@@ -1136,11 +1182,9 @@ function NeedyGreedy:PopulateReportTooltip(tooltip)
                 GameTooltip:Hide()
             end )
 
-            -- Color surrounding cell accoridng to item rarity
+            -- Color surrounding cell according to item rarity
             local _, _, quality = GetItemInfo(item.itemID)
-            local color = {r , g, b, hex}
-            color.r, color.g, color.b, color.hex = GetItemQualityColor(quality)
-            tooltip:SetCellColor(headerline, i + 1, color.r, color.g, color.b)
+            tooltip:SetCell(headerline, i + 1, {item.texture, quality}, nil, nil, nil, ItemCell , nil, nil, nil, 60)
         end
     end
 
