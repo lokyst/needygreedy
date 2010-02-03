@@ -1135,6 +1135,12 @@ function NeedyGreedy:PopulateReportTooltip(tooltip)
             tooltip:SetCellScript(headerline, i + 1, "OnLeave", function()
                 GameTooltip:Hide()
             end )
+
+            -- Color surrounding cell accoridng to item rarity
+            local _, _, quality = GetItemInfo(item.itemID)
+            local color = {r , g, b, hex}
+            color.r, color.g, color.b, color.hex = GetItemQualityColor(quality)
+            tooltip:SetCellColor(headerline, i + 1, color.r, color.g, color.b)
         end
     end
 
@@ -1488,6 +1494,10 @@ end
 function NeedyGreedy:SetItems(itemList)
     items = itemList
     self:UpdateReport()
+end
+
+function NeedyGreedy:GetItems()
+    return items
 end
 
 function NeedyGreedy:TestItemList()
