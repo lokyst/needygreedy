@@ -131,6 +131,14 @@ local options = {
                     get = "GetShowGroupOnly",
                     set = "SetShowGroupOnly",
                 },
+                resetInNewParty = {
+                    name = L["Reset on Join Party"],
+                    desc = L["Clear the item list when joining a new group"],
+                    type = "toggle",
+                    order = 50,
+                    get = "GetResetInNewParty",
+                    set = "SetResetInNewParty",
+                },
 
                 detachedTooltipOptions = {
                     name = "Detached Tooltip options",
@@ -193,6 +201,8 @@ local defaults = {
         onlyShowInParty = false,
         hideInCombat = false,
         showGroupOnly = true,
+        autoPopUp = true,
+        resetInNewParty = true,
     }
 }
 
@@ -240,6 +250,9 @@ local IS_IN_COMBAT = nil
 -- combat the window pops up, you leave combat briefly before another add
 -- attacks and the window disappears as you're deciding
 local ITEM_IS_BEING_ROLLED_ON = nil
+
+-- For tracking grouped status
+local IS_IN_PARTY = nil
 
 -- Utility functions
 local function sanitizePattern(pattern)
@@ -324,6 +337,20 @@ local function itemIdFromLink(itemLink)
     return nil
 end
 
+-- Ye olde pop up box
+local function confirmResetDialog()
+	StaticPopupDialogs["NeedyGreedyResetDialog"] = {
+						text = L["Do you wish to reset NeedyGreedy?"],
+						button1 = ACCEPT,
+						button2 = CANCEL,
+						timeout = 30,
+						whileDead = 0,
+						hideOnEscape = 1,
+						OnAccept = function() NeedyGreedy:ClearItems() end,
+					}
+	StaticPopup_Show("NeedyGreedyResetDialog")
+end
+
 
 
 -- Event handling functions
@@ -394,6 +421,15 @@ function NeedyGreedy:PLAYER_LEAVING_WORLD()
 end
 
 function NeedyGreedy:PARTY_MEMBERS_CHANGED()
+    if GetNumPartyMembers() > 0 and not IS_IN_PARTY then
+        IS_IN_PARTY = true
+        if self.db.profile.resetInNewParty and #items > 0 then
+            confirmResetDialog()
+        end
+    elseif GetNumPartyMembers() == 0 then
+        IS_IN_PARTY = false
+    end
+
     wipe(nameList)
     self:RefreshTooltip()
 end
@@ -687,6 +723,7 @@ function NeedyGreedy:ClearItems()
     wipe(items)
     wipe(nameList)
     self:RefreshTooltip()
+    self:Print(L["All items have been cleared."])
 end
 
 
@@ -975,6 +1012,14 @@ end
 function NeedyGreedy:SetAutoPopUp(info, autoPopUp)
     self.db.profile.autoPopUp = autoPopUp
     self:RefreshTooltip()
+end
+
+function NeedyGreedy:GetResetInNewParty(info)
+    return self.db.profile.resetInNewParty
+end
+
+function NeedyGreedy:SetResetInNewParty(info, resetInNewParty)
+    self.db.profile.resetInNewParty = resetInNewParty
 end
 
 

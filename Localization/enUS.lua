@@ -41,5 +41,9 @@ L["Valid commands are: config, report"] = true
 L["Nothing to report"] = true
 L["Popup when rolling"] = true
 L["Automatically show the detached tooltip when an item is being rolled on"] = true
+L["Reset on Join Party"] = true
+L["Clear the item list when joining a new group"] = true
+L["Do you wish to reset NeedyGreedy?"] = true
+L["All items have been cleared."] = true
 
 end
