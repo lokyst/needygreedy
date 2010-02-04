@@ -756,25 +756,12 @@ function NeedyGreedy:GetNumPlayers()
 end
 
 function NeedyGreedy:ColorizeName(name)
-    -- Derived by hand from RAID_CLASS_COLORS because deriving it in lua seemed tricky
-    -- Might not be that hard: str_format("%02x%02x%02x", r * 255, g * 255, b * 255)
-    local map = {
-        HUNTER = "|c00ABD473",
-        WARLOCK = "|c009482C9",
-        PRIEST = "|c00FFFFFF",
-        PALADIN = "|c00F58CBA",
-        MAGE = "|c0069CCF0",
-        ROGUE = "|c00FFF569",
-        DRUID = "|c00FF7D0A",
-        SHAMAN = "|c002459FF",
-        WARRIOR = "|c00C79C6E",
-        DEATHKNIGHT = "|c00C41F3A"
-    }
     local _, class = UnitClass(name)
     local color
 
     if class then
-        color = map[class]
+        color = RAID_CLASS_COLORS[class]
+        color = string.format("\124cff%.2x%.2x%.2x", color.r*255, color.g*255, color.b*255)
     end
     if not color then
         color = GRAY_FONT_COLOR_CODE
@@ -994,48 +981,53 @@ end
 
 -- QTip Frames
 local LibQTip = LibStub('LibQTip-1.0')
+local COL_MIN_WIDTH = 60
 
 -- Special cell provider for displaying item icons
 local ItemCell, ItemCell_Prototype = LibQTip:CreateCellProvider()
 function ItemCell_Prototype:InitializeCell()
-	self:SetHeight(40)
+    local ItemCellHeight = 30
+    local IconHeight = 25
 
-	if not self.ItemDetailsBorder then
-		self.ItemDetailsBorder = self:CreateTexture(nil, 'ARTWORK')
-	end
+    self:SetHeight(ItemCellHeight)
+    self:SetWidth(COL_MIN_WIDTH)
 
-	self.ItemDetailsBorder:SetTexture(nil)
-	self.ItemDetailsBorder:SetAlpha(1)
-	self.ItemDetailsBorder:SetHeight(27)
-	self.ItemDetailsBorder:SetWidth(27)
-	self.ItemDetailsBorder:SetPoint("CENTER", self, "CENTER")
+    if not self.ItemDetailsBorder then
+        self.ItemDetailsBorder = self:CreateTexture(nil, 'ARTWORK')
+    end
 
-	if not self.ItemDetails then
-		self.ItemDetails = self:CreateTexture(nil,"OVERLAY")
-	end
+    self.ItemDetailsBorder:SetTexture(nil)
+    self.ItemDetailsBorder:SetAlpha(1)
+    self.ItemDetailsBorder:SetHeight(ItemCellHeight)
+    self.ItemDetailsBorder:SetWidth(ItemCellHeight)
+    self.ItemDetailsBorder:SetPoint("CENTER", self, "CENTER")
 
-	self.ItemDetails:SetTexture(nil)
-	self.ItemDetails:SetWidth(22)
-	self.ItemDetails:SetHeight(22)
-	self.ItemDetails:SetPoint("CENTER", self.ItemDetailsBorder, "CENTER")
+    if not self.ItemDetails then
+        self.ItemDetails = self:CreateTexture(nil,"OVERLAY")
+    end
+
+    self.ItemDetails:SetTexture(nil)
+    self.ItemDetails:SetHeight(IconHeight)
+    self.ItemDetails:SetWidth(IconHeight)
+    self.ItemDetails:SetPoint("CENTER", self.ItemDetailsBorder, "CENTER")
 
 end
 
 function ItemCell_Prototype:SetupCell(tooltip, value, justification, font, args)
     local icon, quality = unpack(value)
-	self.ItemDetails:SetTexture(icon)
+    self.ItemDetails:SetTexture(icon)
 
     if quality then
         local color = {r, g, b, hex}
         color.r, color.g, color.b, color.hex = GetItemQualityColor(quality)
-        self.ItemDetailsBorder:SetTexture(color.r, color.g, color.b, 0.8)
+        self.ItemDetailsBorder:SetTexture(color.r, color.g, color.b)
     else
-        self.ItemDetailsBorder:SetTexture("Interface\\BUTTONS\\UI-EmptySlot-Disabled")
+        self.ItemDetailsBorder:SetTexture(nil)
     end
 
-	self.ItemDetailsBorder:Show()
+    self.ItemDetailsBorder:Show()
 
-	return self.ItemDetailsBorder:GetWidth(), self:GetHeight()
+    return self:GetWidth(), self:GetHeight()
 end
 
 -- Detachable tooltip
@@ -1166,9 +1158,13 @@ function NeedyGreedy:PopulateReportTooltip(tooltip)
         end
 
         -- Placeholder icons
-        tooltip:SetCell(headerline, i + 1, {}, nil, nil, nil, ItemCell, nil, nil, nil, 60)
+        tooltip:SetCell(headerline, i + 1, "", nil, nil, nil, nil , nil, nil, nil, COL_MIN_WIDTH)
 
         if item then
+            -- Color surrounding cell according to item rarity
+            local _, _, quality = GetItemInfo(item.itemID)
+            tooltip:SetCell(headerline, i + 1, {item.texture, quality}, nil, nil, nil, ItemCell , nil, nil, nil, COL_MIN_WIDTH)
+
             tooltip:SetCellScript(headerline, i + 1, "OnEnter", function()
                 GameTooltip:SetOwner(tooltip, "ANCHOR_RIGHT")
                 GameTooltip:SetHyperlink(item.link)
@@ -1181,10 +1177,6 @@ function NeedyGreedy:PopulateReportTooltip(tooltip)
             tooltip:SetCellScript(headerline, i + 1, "OnLeave", function()
                 GameTooltip:Hide()
             end )
-
-            -- Color surrounding cell according to item rarity
-            local _, _, quality = GetItemInfo(item.itemID)
-            tooltip:SetCell(headerline, i + 1, {item.texture, quality}, nil, nil, nil, ItemCell , nil, nil, nil, 60)
         end
     end
 
@@ -1223,14 +1215,14 @@ function NeedyGreedy:PopulateReportTooltip(tooltip)
     -- Create table with party names and their rolls
     for i, name in ipairs(players) do
         local partyLine = tooltip:AddLine("")
-        tooltip:SetCell(partyLine, 1, self:ColorizeName(name) .. " " .. (self.db.profile.displayIcons and BLANK_ICON or ""), nil, "LEFT", nil, nil, nil, nil, nil, 100)
+        tooltip:SetCell(partyLine, 1, self:ColorizeName(name) .. " " .. (self.db.profile.displayIcons and BLANK_ICON or ""), nil, "LEFT", nil, nil, nil, nil, nil, COL_MIN_WIDTH)
 
         for i = 1, nItems do
             local index = report.firstItem + i - 1
             if index <= count then
                 local rollID = sorted[index]
                 local item = items[rollID]
-                tooltip:SetCell(partyLine, i + 1, self:ChoiceText(item.choices[name]) .. self:RollText(item.rolls[name]), nil, "LEFT", nil, nil, nil, nil, nil, 60)
+                tooltip:SetCell(partyLine, i + 1, self:ChoiceText(item.choices[name]) .. self:RollText(item.rolls[name]), nil, "LEFT", nil, nil, nil, nil, nil, COL_MIN_WIDTH)
             end
         end
     end
@@ -1534,7 +1526,7 @@ end
 
 
 -- Unit tests
---[[
+
 function NeedyGreedy:SetItems(itemList)
     items = itemList
     self:UpdateReport()
