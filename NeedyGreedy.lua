@@ -423,7 +423,7 @@ end
 function NeedyGreedy:PARTY_MEMBERS_CHANGED()
     if GetNumPartyMembers() > 0 and not IS_IN_PARTY then
         IS_IN_PARTY = true
-        if self.db.profile.resetInNewParty and #items > 0 then
+        if self.db.profile.resetInNewParty then
             confirmResetDialog()
         end
     elseif GetNumPartyMembers() == 0 then
