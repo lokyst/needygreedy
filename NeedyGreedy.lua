@@ -58,7 +58,7 @@ local options = {
                     name = L["Display Items"],
                     desc = L["Number of item columns in the display window"],
                     type = "range",
-                    order = 100,
+                    order = 105,
                     min = 1,
                     max = 10,
                     step = 1,
@@ -90,6 +90,21 @@ local options = {
                     get = "GetQuality",
                     set = "SetQuality"
                 },
+                resetInNewParty = {
+                    name = L["Reset on Join Party"],
+                    desc = L["Clear the item list when joining a new group"],
+                    type = "select",
+                    values = {
+                        always = "Always",
+                        ask = "Ask",
+                        never = "Never",
+                    },
+                    style = "dropdown",
+                    order = 100,
+                    get = "GetResetInNewParty",
+                    set = "SetResetInNewParty",
+                },
+
                 displayIcons = {
                     name = L["Graphical Display"],
                     desc = L["Display icons for rolls types instead of text"],
@@ -130,14 +145,6 @@ local options = {
                     order = 40,
                     get = "GetShowGroupOnly",
                     set = "SetShowGroupOnly",
-                },
-                resetInNewParty = {
-                    name = L["Reset on Join Party"],
-                    desc = L["Clear the item list when joining a new group"],
-                    type = "toggle",
-                    order = 50,
-                    get = "GetResetInNewParty",
-                    set = "SetResetInNewParty",
                 },
 
                 detachedTooltipOptions = {
@@ -202,7 +209,7 @@ local defaults = {
         hideInCombat = false,
         showGroupOnly = true,
         autoPopUp = true,
-        resetInNewParty = true,
+        resetInNewParty = "ask",
     }
 }
 
@@ -423,7 +430,9 @@ end
 function NeedyGreedy:PARTY_MEMBERS_CHANGED()
     if GetNumPartyMembers() > 0 and not IS_IN_PARTY then
         IS_IN_PARTY = true
-        if self.db.profile.resetInNewParty then
+        if self.db.profile.resetInNewParty == "always" and (next(items) ~= nil) then
+            self:ClearItems()
+        elseif self.db.profile.resetInNewParty == "ask" and (next(items) ~= nil) then
             confirmResetDialog()
         end
     elseif GetNumPartyMembers() == 0 then
