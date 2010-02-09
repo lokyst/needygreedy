@@ -17,7 +17,6 @@ local NeedyGreedyLDB = LibStub("LibDataBroker-1.1"):NewDataObject("NeedyGreedy",
         elseif IsShiftKeyDown() then
             NeedyGreedy.db.profile.detachedTooltip = not NeedyGreedy.db.profile.detachedTooltip
             LibStub("AceConfigRegistry-3.0"):NotifyChange("NeedyGreedy")
-            report.firstItem = 1
             NeedyGreedy:HideDBTooltip()
             NeedyGreedy:ShowDBTooltip(frame)
             NeedyGreedy:HideDetachedTooltip()
@@ -37,7 +36,9 @@ local NeedyGreedyLDB = LibStub("LibDataBroker-1.1"):NewDataObject("NeedyGreedy",
         NeedyGreedy:ShowDBTooltip(frame)
     end,
     OnLeave = function()
-        NeedyGreedy:HideDBTooltip()
+        if NeedyGreedy.db.profile.detachedTooltip then
+            NeedyGreedy:HideDBTooltip()
+        end
     end,
 })
 local ngDBIcon = LibStub("LibDBIcon-1.0")
@@ -1139,10 +1140,14 @@ function NeedyGreedy:ShowDBTooltip(frame)
         self.dbTooltip = LibQTip:Acquire("NeedyGreedyDBReport", 1, "LEFT")
 
         if not self.db.profile.detachedTooltip then
+            self.dbTooltip:SetAutoHideDelay(0.25, frame)
             -- Add columns here because tooltip:Clear() preserves columns
             for i = 1, self.db.profile.nItems do
                 self.dbTooltip:AddColumn("LEFT")
             end
+
+            -- Extra column for the pager arrow
+            self.dbTooltip:AddColumn("LEFT")
 
             -- Fill in the info
             self:BuildDBReportTooltip(self.dbTooltip)
@@ -1358,6 +1363,7 @@ function NeedyGreedy:BuildDBReportTooltip(tooltip)
     tooltip:Clear()
     self:AddHeaderText(tooltip)
     self:PopulateReportTooltip(tooltip)
+    self:AddPagerArrows(tooltip)
     self:AddInfoText(tooltip)
 end
 
