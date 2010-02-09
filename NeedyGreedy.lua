@@ -430,9 +430,9 @@ end
 function NeedyGreedy:PARTY_MEMBERS_CHANGED()
     if GetNumPartyMembers() > 0 and not IS_IN_PARTY then
         IS_IN_PARTY = true
-        if self.db.profile.resetInNewParty == "always" and (next(items) ~= nil) then
+        if self.db.profile.resetInNewParty == "always" and (#items ~= 0) then
             self:ClearItems()
-        elseif self.db.profile.resetInNewParty == "ask" and (next(items) ~= nil) then
+        elseif self.db.profile.resetInNewParty == "ask" and (#items ~= 0) then
             confirmResetDialog()
         end
     elseif GetNumPartyMembers() == 0 then
@@ -460,7 +460,7 @@ function NeedyGreedy:START_LOOT_ROLL(event, rollid)
     local texture, name, count, quality = GetLootRollItemInfo(rollid)
     local link = GetLootRollItemLink(rollid)
     if quality >= self.db.profile.quality then
-        items[rollid] = {
+        table.insert(items, {
             texture = texture,
             link = link,
             itemID = itemIdFromLink(link),
@@ -468,7 +468,7 @@ function NeedyGreedy:START_LOOT_ROLL(event, rollid)
             received = 0,
             choices = {},
             rolls = {}
-        }
+        })
 
         if self.db.profile.detachedTooltip and self.db.profile.autoPopUp then
             ITEM_IS_BEING_ROLLED_ON = true
@@ -633,7 +633,7 @@ function NeedyGreedy:RecordChoice(link, player, choice)
     local _, _, quality = GetItemInfo(link)
     if quality < self.db.profile.quality then return end
 
-    for rollid, record in pairs(items) do
+    for _, record in ipairs(items) do
         if record.assigned == "" and record.link == link then
             record.choices[player] = choice
             break
@@ -646,7 +646,7 @@ function NeedyGreedy:RecordRoll(link, player, number)
     local _, _, quality = GetItemInfo(link)
     if quality < self.db.profile.quality then return end
 
-    for rollid, record in pairs(items) do
+    for _, record in ipairs(items) do
         if record.assigned == "" and record.link == link then
             record.rolls[player] = number
             break
@@ -659,7 +659,7 @@ function NeedyGreedy:RecordAwarded(link, player)
     local _, _, quality = GetItemInfo(link)
     if quality < self.db.profile.quality then return end
 
-    for rollid, record in pairs(items) do
+    for _, record in ipairs(items) do
         if record.assigned == "" and record.link == link then
             record.assigned = player
             break
@@ -674,7 +674,7 @@ function NeedyGreedy:RecordReceived(link, player)
     if quality < ITEM_QUALITY_COMMON then return end
 
     local match = false
-    for rollid, record in pairs(items) do
+    for _, record in ipairs(items) do
         if record.received == 0 and record.link == link then
             record.received = GetTime()
             match = true
@@ -684,7 +684,7 @@ function NeedyGreedy:RecordReceived(link, player)
 
     if not match then
         -- For items with weird unique identifiers
-        for rollid, record in pairs(items) do
+        for _, record in ipairs(items) do
             if record.received == 0 and record.itemID == itemIdFromLink(link) then
                 record.received = GetTime()
                 match = true
@@ -694,7 +694,7 @@ function NeedyGreedy:RecordReceived(link, player)
     end
 
     if not match then
-        for rollid, record in pairs(items) do
+        for _, record in ipairs(items) do
             -- Since players receive the results of the disenchant, we will never be
             -- able to match the link that triggered the received message against
             -- our list. However, we should cross disenchanted items that have been
@@ -713,7 +713,7 @@ function NeedyGreedy:RecordReceived(link, player)
     -- pedantic man, we will do this as a separate scan
     if ITEM_IS_BEING_ROLLED_ON then
         local itemsStillBeingRolledOn = 0
-        for _, record in pairs(items) do
+        for _, record in ipairs(items) do
             if record.received == 0 then
                 itemsStillBeingRolledOn = itemsStillBeingRolledOn + 1
             end
@@ -747,7 +747,7 @@ function NeedyGreedy:PageLeft()
 end
 
 function NeedyGreedy:PageRight()
-    local count = NeedyGreedy:CountItems()
+    local count = #items
     report.firstItem = report.firstItem + self.db.profile.nItems
     if count == 0 then
         report.firstItem = 1
@@ -777,7 +777,7 @@ function NeedyGreedy:GetSortedPlayers()
     end
 
     if not self.db.profile.showGroupOnly then
-        for _, item in pairs(items) do
+        for _, item in ipairs(items) do
             for name, _ in pairs(item.choices) do
                 if not nameList[name] then nameList[name] = name end
             end
@@ -843,24 +843,6 @@ function NeedyGreedy:AssignedText(item)
     end
 end
 
--- Return a list of rollids ordered from most recent to least recent
-function NeedyGreedy:SortRollids()
-    local rollids = {}
-    for rollid, _ in pairs(items) do
-        table.insert(rollids, rollid)
-    end
-    table.sort(rollids, function(a, b) return a > b end)
-    return rollids
-end
-
-function NeedyGreedy:CountItems()
-    local i = 0
-    for _, _ in pairs(items) do
-        i = i + 1
-    end
-    return i
-end
-
 function NeedyGreedy:ExpireItems()
     local now = GetTime()
     local update = false
@@ -868,9 +850,9 @@ function NeedyGreedy:ExpireItems()
     if self.db.profile.expiry == 0 then
         return
     end
-    for rollid, record in pairs(items) do
+    for rollid, record in ipairs(items) do
         if record.received > 0 and now - record.received >= self.db.profile.expiry * 60 then
-            items[rollid] = nil
+            table.remove(items, rollid)
             wipe(nameList)
             update = true
         end
@@ -1190,8 +1172,7 @@ function NeedyGreedy:PopulateReportTooltip(tooltip)
     local players = self:GetSortedPlayers()
 
     -- Verify that report.firstItem is set reasonably
-    local sorted = self:SortRollids()
-    local count = self:CountItems()
+    local count = #items
 
     if not(report.firstItem) then report.firstItem = 1 end
     if count == 0 then
@@ -1203,12 +1184,11 @@ function NeedyGreedy:PopulateReportTooltip(tooltip)
     -- Create icon headers
     local headerline, _ = tooltip:AddLine("")
     for i = 1, nItems do
-        local index = report.firstItem + i - 1
+        local index = #items - (report.firstItem + i - 2)
         local texture = ""
         local item = nil
-        if index <= count then
-            local rollID = sorted[index]
-            item = items[rollID]
+        if index >= 1 then
+            item = items[index]
         end
 
         -- Placeholder icons
@@ -1238,13 +1218,12 @@ function NeedyGreedy:PopulateReportTooltip(tooltip)
     if self.db.profile.displayTextLink then
         headerline, _ = tooltip:AddLine("")
         for i = 1, nItems do
-            local index = report.firstItem + i - 1
+            local index = #items - (report.firstItem + i - 2)
             local text = ""
             local item = nil
-            if index <= count then
-                local rollID = sorted[index]
-                item = items[rollID]
-                text= item.link
+            if index >= 1 then
+                item = items[index]
+                text = item.link
             end
             tooltip:SetCell(headerline, i + 1, text, nil, nil, nil, nil, nil, nil, nil, 60)
             if item then
@@ -1272,10 +1251,9 @@ function NeedyGreedy:PopulateReportTooltip(tooltip)
         tooltip:SetCell(partyLine, 1, self:ColorizeName(name) .. " " .. (self.db.profile.displayIcons and BLANK_ICON or ""), nil, "LEFT", nil, nil, nil, nil, nil, COL_MIN_WIDTH)
 
         for i = 1, nItems do
-            local index = report.firstItem + i - 1
-            if index <= count then
-                local rollID = sorted[index]
-                local item = items[rollID]
+            local index = #items - (report.firstItem + i - 2)
+            if index >= 1 then
+                local item = items[index]
                 tooltip:SetCell(partyLine, i + 1, self:ChoiceText(item.choices[name]) .. self:RollText(item.rolls[name]), nil, "LEFT", nil, nil, nil, nil, nil, COL_MIN_WIDTH)
             end
         end
@@ -1286,10 +1264,9 @@ function NeedyGreedy:PopulateReportTooltip(tooltip)
     -- Display winner
     local winnerTable = {yC .. "Winner|r"}
     for i = 1, nItems do
-        local index = report.firstItem + i - 1
-        if index <= count then
-            local rollID = sorted[index]
-            local item = items[rollID]
+        local index = #items - (report.firstItem + i - 2)
+        if index >= 1 then
+            local item = items[index]
             table.insert(winnerTable, self:AssignedText(item))
         end
     end
@@ -1311,7 +1288,7 @@ end
 
 function NeedyGreedy:AddPagerArrows(tooltip)
     local nItems = self.db.profile.nItems
-    local count = self:CountItems()
+    local count = #items
 
     local lineNum, _ = tooltip:AddLine("")
     local colNum = nItems + 1
@@ -1541,7 +1518,7 @@ function NeedyGreedy:PrintReport()
     if #items == 0 then self:Print(L["Nothing to report"]) return end
     local output = {}
 
-    for rollID, item in pairs(items) do
+    for _, item in ipairs(items) do
         for name, choice in pairs(item.choices) do
             if not output[name] then
                 output[name] = {
@@ -1592,11 +1569,6 @@ end
 
 function NeedyGreedy:TestItemList()
     items = {
-        nil, -- [1]
-        nil, -- [2]
-        nil, -- [3]
-        nil, -- [4]
-        nil, -- [5]
         {
             ["received"] = 108626.818,
             ["assigned"] = "Evilplaque",
