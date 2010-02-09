@@ -1505,12 +1505,15 @@ end
 
 -- Console commands
 function NeedyGreedy:ProcessSlashCommands(input)
+    input = input:trim()
     if input == "report" then
         self:PrintReport()
     elseif input == "config" then
         InterfaceOptionsFrame_OpenToCategory("NeedyGreedy")
+    elseif input == "reset" then
+        self:ClearItems()
     else
-        self:Print(L["Valid commands are: config, report"])
+        self:Print(L["Valid commands are: config, report, reset"])
     end
 end
 
