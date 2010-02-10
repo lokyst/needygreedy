@@ -1579,7 +1579,7 @@ end
 
 
 -- Unit tests
-
+--[[
 function NeedyGreedy:SetItems(itemList)
     items = itemList
     self:UpdateReport()
