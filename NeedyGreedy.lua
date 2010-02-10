@@ -921,6 +921,7 @@ end
 
 function NeedyGreedy:SetDetachedTooltip(info, detachedTooltip)
     self.db.profile.detachedTooltip = detachedTooltip
+    self:HideDBTooltip()
     if self.db.profile.detachedTooltip then
         self.db.profile.detachedTooltipDisplayStatus = true
         if self:CheckDisplayOptions() then
