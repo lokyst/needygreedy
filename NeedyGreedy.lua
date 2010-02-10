@@ -1176,6 +1176,16 @@ function NeedyGreedy:PopulateReportTooltip(tooltip)
     local nItems = self.db.profile.nItems
     local players = self:GetSortedPlayers()
 
+    -- For sizing the columns
+    local fontString = tooltip:CreateFontString()
+    fontString:SetFontObject(tooltip:GetFont())
+    local minWidth = 0
+    for _, name in ipairs(players) do
+        fontString:SetText(name)
+        local fontWidth = fontString:GetStringWidth()
+        minWidth = max(fontWidth, minWidth)
+    end
+
     -- Verify that report.firstItem is set reasonably
     local count = #items
 
@@ -1197,12 +1207,12 @@ function NeedyGreedy:PopulateReportTooltip(tooltip)
         end
 
         -- Placeholder icons
-        tooltip:SetCell(headerline, i + 1, "", nil, nil, nil, nil , nil, nil, nil, COL_MIN_WIDTH)
+        tooltip:SetCell(headerline, i + 1, "", nil, nil, nil, nil , nil, nil, nil, minWidth)
 
         if item then
             -- Color surrounding cell according to item rarity
             local _, _, quality = GetItemInfo(item.itemID)
-            tooltip:SetCell(headerline, i + 1, {item.texture, quality}, nil, nil, nil, ItemCell , nil, nil, nil, COL_MIN_WIDTH)
+            tooltip:SetCell(headerline, i + 1, {item.texture, quality}, nil, nil, nil, ItemCell , nil, nil, nil, minWidth)
 
             tooltip:SetCellScript(headerline, i + 1, "OnEnter", function()
                 GameTooltip:SetOwner(tooltip, "ANCHOR_RIGHT")
@@ -1253,13 +1263,13 @@ function NeedyGreedy:PopulateReportTooltip(tooltip)
     -- Create table with party names and their rolls
     for i, name in ipairs(players) do
         local partyLine = tooltip:AddLine("")
-        tooltip:SetCell(partyLine, 1, self:ColorizeName(name) .. " " .. (self.db.profile.displayIcons and BLANK_ICON or ""), nil, "LEFT", nil, nil, nil, nil, nil, COL_MIN_WIDTH)
+        tooltip:SetCell(partyLine, 1, self:ColorizeName(name) .. " " .. (self.db.profile.displayIcons and BLANK_ICON or ""), nil, "LEFT", nil, nil, nil, nil, nil, minWidth)
 
         for i = 1, nItems do
             local index = #items - (report.firstItem + i - 2)
             if index >= 1 then
                 local item = items[index]
-                tooltip:SetCell(partyLine, i + 1, self:ChoiceText(item.choices[name]) .. self:RollText(item.rolls[name]), nil, "LEFT", nil, nil, nil, nil, nil, COL_MIN_WIDTH)
+                tooltip:SetCell(partyLine, i + 1, self:ChoiceText(item.choices[name]) .. self:RollText(item.rolls[name]), nil, "LEFT", nil, nil, nil, nil, nil, minWidth)
             end
         end
     end
