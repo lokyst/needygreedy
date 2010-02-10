@@ -1766,7 +1766,7 @@ function NeedyGreedy:TestItemList()
             ["texture"] = "Interface\\Icons\\Spell_Frost_FrozenCore",
         }, -- [14]
     }
-    self:UpdateReport()
+    self:RefreshTooltip()
 end
 --]]
 
