@@ -1130,6 +1130,8 @@ end
 function NeedyGreedy:HideDetachedTooltip()
     if self.detachedTooltip then
         self.detachedTooltip:Hide()
+        self.detachedTooltip:SetScript("OnMouseDown", function() return end)
+        self.detachedTooltip:SetScript("OnMouseUp", function() return end)
         LibQTip:Release(self.detachedTooltip)
         self.detachedTooltip = nil
     end
