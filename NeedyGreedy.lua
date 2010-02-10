@@ -429,14 +429,14 @@ function NeedyGreedy:PLAYER_LEAVING_WORLD()
 end
 
 function NeedyGreedy:PARTY_MEMBERS_CHANGED()
-    if GetNumPartyMembers() > 0 and not IS_IN_PARTY then
+    if (GetNumPartyMembers() > 0 or GetNumRaidMembers() > 0) and not IS_IN_PARTY then
         IS_IN_PARTY = true
         if self.db.profile.resetInNewParty == "always" and (#items ~= 0) then
             self:ClearItems()
         elseif self.db.profile.resetInNewParty == "ask" and (#items ~= 0) then
             confirmResetDialog()
         end
-    elseif GetNumPartyMembers() == 0 then
+    elseif (GetNumPartyMembers() == 0 and GetNumRaidMembers() == 0) then
         IS_IN_PARTY = false
     end
 
@@ -1579,7 +1579,7 @@ end
 
 
 -- Unit tests
---[[
+
 function NeedyGreedy:SetItems(itemList)
     items = itemList
     self:UpdateReport()
