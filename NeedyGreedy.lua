@@ -105,6 +105,20 @@ local options = {
                     get = "GetResetInNewParty",
                     set = "SetResetInNewParty",
                 },
+                resetInNewInstance = {
+                    name = L["Reset in Instance"],
+                    desc = L["Clear the item list when entering an instance"],
+                    type = "select",
+                    values = {
+                        always = "Always",
+                        ask = "Ask",
+                        never = "Never",
+                    },
+                    style = "dropdown",
+                    order = 101,
+                    get = "GetResetInNewInstance",
+                    set = "SetResetInNewInstance",
+                },
 
                 displayIcons = {
                     name = L["Graphical Display"],
@@ -211,6 +225,7 @@ local defaults = {
         showGroupOnly = true,
         autoPopUp = true,
         resetInNewParty = "ask",
+        resetInNewInstance = "ask",
     }
 }
 
@@ -261,6 +276,9 @@ local ITEM_IS_BEING_ROLLED_ON = nil
 
 -- For tracking grouped status
 local IS_IN_PARTY = nil
+
+-- For tracking ghost status
+local WAS_GHOST = nil
 
 -- Utility functions
 local function sanitizePattern(pattern)
@@ -385,6 +403,7 @@ function NeedyGreedy:OnEnable()
     self:RegisterEvent("CHAT_MSG_LOOT")
     self:RegisterEvent("PLAYER_REGEN_DISABLED")
     self:RegisterEvent("PLAYER_REGEN_ENABLED")
+    self:RegisterEvent("PLAYER_ALIVE")
 
     self:ScheduleRepeatingTimer("ExpireItems", 10)
 
@@ -421,6 +440,20 @@ function NeedyGreedy:PLAYER_ENTERING_WORLD()
         end
     end
 
+    local inInstance, instanceType = IsInInstance()
+    if inInstance and (instanceType == "party" or instanceType == "raid") then
+        -- Don't ask when making a graveyard run
+        if not WAS_GHOST then
+            if self.db.profile.resetInNewInstance == "always" and (#items ~= 0) then
+                self:ClearItems()
+            elseif self.db.profile.resetInNewInstance == "ask" and (#items ~= 0) then
+                confirmResetDialog()
+            end
+        else
+            WAS_GHOST = false
+        end
+    end
+
     self:SetShowLootSpam()
 end
 
@@ -452,6 +485,14 @@ end
 function NeedyGreedy:PLAYER_REGEN_ENABLED()
     IS_IN_COMBAT = false
     self:RefreshTooltip()
+end
+
+function NeedyGreedy:PLAYER_ALIVE()
+    if not WAS_GHOST and UnitIsDeadOrGhost("player") then
+        WAS_GHOST = true
+    elseif WAS_GHOST then
+        WAS_GHOST = false
+    end
 end
 
 
@@ -1013,6 +1054,14 @@ end
 
 function NeedyGreedy:SetResetInNewParty(info, resetInNewParty)
     self.db.profile.resetInNewParty = resetInNewParty
+end
+
+function NeedyGreedy:GetResetInNewInstance(info)
+    return self.db.profile.resetInNewInstance
+end
+
+function NeedyGreedy:SetResetInNewInstance(info, resetInNewInstance)
+    self.db.profile.resetInNewInstance = resetInNewInstance
 end
 
 

@@ -45,5 +45,7 @@ L["Reset on Join Party"] = true
 L["Clear the item list when joining a new group"] = true
 L["Do you wish to reset NeedyGreedy?"] = true
 L["All items have been cleared."] = true
+L["Reset in Instance"] = true
+L["Clear the item list when entering an instance"] = true
 
 end
