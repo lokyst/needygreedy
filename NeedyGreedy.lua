@@ -488,7 +488,7 @@ function NeedyGreedy:PLAYER_REGEN_ENABLED()
 end
 
 function NeedyGreedy:PLAYER_ALIVE()
-    if not WAS_GHOST and UnitIsDeadOrGhost("player") then
+    if UnitIsDeadOrGhost("player") then
         WAS_GHOST = true
     elseif WAS_GHOST then
         WAS_GHOST = false
