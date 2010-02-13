@@ -47,5 +47,10 @@ L["Do you wish to reset NeedyGreedy?"] = true
 L["All items have been cleared."] = true
 L["Reset in Instance"] = true
 L["Clear the item list when entering an instance"] = true
+L["Open the configuration menu"] = true
+L["Hide the detached tooltip"] = true
+L["Generate a text summary"] = true
+L["Reset the item list"] = true
+L["Show the detached tooltip"] = true
 
 end

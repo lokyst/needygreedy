@@ -229,6 +229,39 @@ local defaults = {
     }
 }
 
+-- Console commands
+local slashTable = {
+    handler = NeedyGreedy,
+    type = "group",
+    args = {
+        config = {
+            name = L["Open the configuration menu"],
+            type = "execute",
+            func = function() InterfaceOptionsFrame_OpenToCategory("NeedyGreedy") end,
+        },
+        hide = {
+            name = L["Hide the detached tooltip"],
+            type = "execute",
+            func = "SlashHide",
+        },
+        report = {
+            name = L["Generate a text summary"],
+            type = "execute",
+            func = "PrintReport",
+        },
+        reset = {
+            name = L["Reset the item list"],
+            type = "execute",
+            func = "ClearItems",
+        },
+        show = {
+            name = L["Show the detached tooltip"],
+            type = "execute",
+            func = "SlashShow",
+        },
+    },
+}
+
 -- Icon textures
 local iconSize = 27
 local NEEDYGREEDY_CHOICE = {
@@ -381,17 +414,24 @@ end
 
 -- Event handling functions
 function NeedyGreedy:OnInitialize()
+
+    -- Profile handling
     self.db = LibStub("AceDB-3.0"):New("NeedyGreedyDB", defaults, true)
     self.db.RegisterCallback(self, "OnProfileChanged", "RefreshProfile")
     self.db.RegisterCallback(self, "OnProfileCopied", "RefreshProfile")
     self.db.RegisterCallback(self, "OnProfileReset", "RefreshProfile")
     options.args.profile = LibStub("AceDBOptions-3.0"):GetOptionsTable(self.db)
+
+    -- Register config options
     LibStub("AceConfig-3.0"):RegisterOptionsTable("NeedyGreedy", options)
+
+    -- Set up GUI configuration
     local ACD = LibStub("AceConfigDialog-3.0")
     ACD:AddToBlizOptions("NeedyGreedy", "NeedyGreedy", nil, "general")
     ACD:AddToBlizOptions("NeedyGreedy", L["Profile"], "NeedyGreedy", "profile")
-    self:RegisterChatCommand("needygreedy", "ProcessSlashCommands")
-    self:RegisterChatCommand("ng", "ProcessSlashCommands")
+
+    -- Register slash options table
+    LibStub("AceConfig-3.0"):RegisterOptionsTable("NeedyGreedyCmds", slashTable, {"ng", "needygreedy"})
 
     -- Register the minimap icon
     ngDBIcon:Register("NeedyGreedy", NeedyGreedyLDB, self.db.profile.minimap)
@@ -1583,18 +1623,19 @@ end
 
 
 
--- Console commands
-function NeedyGreedy:ProcessSlashCommands(input)
-    input = input:trim()
-    if input == "report" then
-        self:PrintReport()
-    elseif input == "config" then
-        InterfaceOptionsFrame_OpenToCategory("NeedyGreedy")
-    elseif input == "reset" then
-        self:ClearItems()
-    else
-        self:Print(L["Valid commands are: config, report, reset"])
-    end
+-- Slash Commands
+function NeedyGreedy:SlashHide()
+    self.db.profile.detachedTooltip = true
+    self.db.profile.detachedTooltipDisplayStatus = false
+    self:RefreshTooltip()
+    LibStub("AceConfigRegistry-3.0"):NotifyChange("NeedyGreedy")
+end
+
+function NeedyGreedy:SlashShow()
+    self.db.profile.detachedTooltip = true
+    self.db.profile.detachedTooltipDisplayStatus = true
+    self:RefreshTooltip()
+    LibStub("AceConfigRegistry-3.0"):NotifyChange("NeedyGreedy")
 end
 
 function NeedyGreedy:PrintReport()
