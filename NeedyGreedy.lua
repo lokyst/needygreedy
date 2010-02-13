@@ -1117,6 +1117,26 @@ function ItemCell_Prototype:SetupCell(tooltip, value, justification, font, args)
     return self:GetWidth(), self:GetHeight()
 end
 
+-- Create functions locally to reduce garbage collection
+local function Detached_OnMouseDown()
+    NeedyGreedy.detachedTooltip:StartMoving()
+end
+
+local function Detached_OnMouseUp()
+    -- Make it remember
+    local tooltip = NeedyGreedy.detachedTooltip
+    local pos = NeedyGreedy.db.profile.reportFramePos
+
+    tooltip:StopMovingOrSizing()
+
+    local anchor1, _, anchor2, x, y = tooltip:GetPoint()
+
+    pos.anchor1 = anchor1
+    pos.anchor2 = anchor2
+    pos.x = x
+    pos.y = y
+end
+
 -- Detachable tooltip
 function NeedyGreedy:ShowDetachedTooltip()
 
@@ -1159,16 +1179,8 @@ function NeedyGreedy:ShowDetachedTooltip()
                 self.db.profile.reportFramePos.x, self.db.profile.reportFramePos.y)
 
             -- Make it move !
-            self.detachedTooltip:SetScript("OnMouseDown", function() self.detachedTooltip:StartMoving() end)
-            self.detachedTooltip:SetScript("OnMouseUp", function()
-                -- Make it remember
-                self.detachedTooltip:StopMovingOrSizing()
-                local anchor1, _, anchor2, x, y = self.detachedTooltip:GetPoint()
-                self.db.profile.reportFramePos.anchor1 = anchor1
-                self.db.profile.reportFramePos.anchor2 = anchor2
-                self.db.profile.reportFramePos.x = x
-                self.db.profile.reportFramePos.y = y
-            end)
+            self.detachedTooltip:SetScript("OnMouseDown", Detached_OnMouseDown)
+            self.detachedTooltip:SetScript("OnMouseUp", Detached_OnMouseUp)
         end
     end
 
@@ -1179,8 +1191,8 @@ end
 function NeedyGreedy:HideDetachedTooltip()
     if self.detachedTooltip then
         self.detachedTooltip:Hide()
-        self.detachedTooltip:SetScript("OnMouseDown", function() return end)
-        self.detachedTooltip:SetScript("OnMouseUp", function() return end)
+        self.detachedTooltip:SetScript("OnMouseDown", nil)
+        self.detachedTooltip:SetScript("OnMouseUp", nil)
         LibQTip:Release(self.detachedTooltip)
         self.detachedTooltip = nil
     end
