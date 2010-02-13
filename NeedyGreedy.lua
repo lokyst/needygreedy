@@ -382,9 +382,9 @@ end
 -- Event handling functions
 function NeedyGreedy:OnInitialize()
     self.db = LibStub("AceDB-3.0"):New("NeedyGreedyDB", defaults, true)
-    self.db.RegisterCallback(self, "OnProfileChanged", "RefreshTooltip")
-    self.db.RegisterCallback(self, "OnProfileCopied", "RefreshTooltip")
-    self.db.RegisterCallback(self, "OnProfileReset", "RefreshTooltip")
+    self.db.RegisterCallback(self, "OnProfileChanged", "RefreshProfile")
+    self.db.RegisterCallback(self, "OnProfileCopied", "RefreshProfile")
+    self.db.RegisterCallback(self, "OnProfileReset", "RefreshProfile")
     options.args.profile = LibStub("AceDBOptions-3.0"):GetOptionsTable(self.db)
     LibStub("AceConfig-3.0"):RegisterOptionsTable("NeedyGreedy", options)
     local ACD = LibStub("AceConfigDialog-3.0")
@@ -1635,6 +1635,19 @@ function NeedyGreedy:PrintReport()
     for _, info in ipairs(sorted) do
         self:Printf("%s N:%d G:%d DE:%d P:%d Wins:%d", info.name, info.need, info.greed, info.disenchant, info.pass, info.assigned)
     end
+end
+
+
+
+-- Profile Handling
+function NeedyGreedy:RefreshProfile()
+    if self.db.profile.minimap.hide then
+        ngDBIcon:Hide("NeedyGreedy")
+    else
+        ngDBIcon:Show("NeedyGreedy")
+    end
+
+    self:RefreshTooltip()
 end
 
 
