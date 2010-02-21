@@ -473,6 +473,8 @@ function NeedyGreedy:OnDisable()
 end
 
 function NeedyGreedy:PLAYER_ENTERING_WORLD()
+    if IS_IN_COMBAT then return end     -- The prophet Tharonja's phases do this
+
     wipe(nameList)
     if self.db.profile.detachedTooltip then
         if self:DisplayDetachedTTCheck() then
