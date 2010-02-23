@@ -210,6 +210,15 @@ local options = {
                     get = "GetTooltipScale",
                     set = "SetTooltipScale",
                 },
+                lockTooltip = {
+                    name = L["Lock Tooltip"],
+                    desc = L["Adjust the position of the detached tooltip"],
+                    type = "toggle",
+                    order = 100,
+                    get = "GetLockTooltip",
+                    set = "SetLockTooltip",
+                    width = "full",
+                },
 
             },
         },
@@ -236,6 +245,7 @@ local defaults = {
         resetInNewParty = "ask",
         resetInNewInstance = "ask",
         tooltipScale = 1,
+        lockTooltip = false,
     }
 }
 
@@ -1150,6 +1160,15 @@ function NeedyGreedy:SetTooltipScale(info, tooltipScale)
     self:RefreshTooltip()
 end
 
+function NeedyGreedy:GetLockTooltip(info)
+    return self.db.profile.lockTooltip
+end
+
+function NeedyGreedy:SetLockTooltip(info, lockTooltip)
+    self.db.profile.lockTooltip = lockTooltip
+    self:RefreshTooltip()
+end
+
 
 
 -- QTip Frames
@@ -1266,8 +1285,10 @@ function NeedyGreedy:ShowDetachedTooltip()
                 self.db.profile.reportFramePos.x, self.db.profile.reportFramePos.y)
 
             -- Make it move !
-            self.detachedTooltip:SetScript("OnMouseDown", Detached_OnMouseDown)
-            self.detachedTooltip:SetScript("OnMouseUp", Detached_OnMouseUp)
+            if not self.db.profile.lockTooltip then
+                self.detachedTooltip:SetScript("OnMouseDown", Detached_OnMouseDown)
+                self.detachedTooltip:SetScript("OnMouseUp", Detached_OnMouseUp)
+            end
         end
     end
 
