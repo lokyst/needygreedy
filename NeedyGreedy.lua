@@ -184,13 +184,13 @@ local options = {
                             get = "GetAutoPopUp",
                             set = "SetAutoPopUp",
                         },
-                        onlyShowInParty = {
-                            name = L["Show only in party"],
-                            desc = L["Only display the detached window when in a party"],
+                        showOnParty = {
+                            name = L["Show in party"],
+                            desc = L["Display the detached window when joining a party and hide the tooltip when leaving a party"],
                             type = "toggle",
                             order = 12,
-                            get = "GetOnlyShowInParty",
-                            set = "SetOnlyShowInParty",
+                            get = "GetShowOnParty",
+                            set = "SetShowOnParty",
                         },
                         hideInCombat = {
                             name = L["Hide in combat"],
@@ -217,10 +217,10 @@ local defaults = {
         displayIcons = true,
         detachedTooltip = false,
         displayTextLink = false,
-        detachedIsShown = false,
+        detachedTooltipDisplayStatus = false,
         minimap = { hide = false },
         filterLootMsgs = false,
-        onlyShowInParty = false,
+        showOnParty = false,
         hideInCombat = false,
         showGroupOnly = true,
         autoPopUp = true,
@@ -506,13 +506,26 @@ end
 function NeedyGreedy:PARTY_MEMBERS_CHANGED()
     if (GetNumPartyMembers() > 0 or GetNumRaidMembers() > 0) and not IS_IN_PARTY then
         IS_IN_PARTY = true
+
         if self.db.profile.resetInNewParty == "always" and (#items ~= 0) then
             self:ClearItems()
         elseif self.db.profile.resetInNewParty == "ask" and (#items ~= 0) then
             confirmResetDialog()
         end
+
+        if self.db.profile.showOnParty and self.db.profile.detachedTooltip and not self.db.profile.detachedTooltipDisplayStatus then
+            self.db.profile.detachedTooltipDisplayStatus = true
+            self:ShowDetachedTooltip()
+        end
+
     elseif (GetNumPartyMembers() == 0 and GetNumRaidMembers() == 0) then
         IS_IN_PARTY = false
+
+        if self.db.profile.showOnParty and self.db.profile.detachedTooltip and self.db.profile.detachedTooltipDisplayStatus then
+            self.db.profile.detachedTooltipDisplayStatus = false
+            self:HideDetachedTooltip()
+        end
+
     end
 
     wipe(nameList)
@@ -1065,13 +1078,12 @@ function NeedyGreedy:SetFilterLootMsgs(info, filterLootMsgs)
     end
 end
 
-function NeedyGreedy:GetOnlyShowInParty(info)
-    return self.db.profile.onlyShowInParty
+function NeedyGreedy:GetShowOnParty(info)
+    return self.db.profile.showOnParty
 end
 
-function NeedyGreedy:SetOnlyShowInParty(info, onlyShowInParty)
-    self.db.profile.onlyShowInParty = onlyShowInParty
-    self:RefreshTooltip()
+function NeedyGreedy:SetShowOnParty(info, showOnParty)
+    self.db.profile.showOnParty = showOnParty
 end
 
 function NeedyGreedy:GetHideInCombat(info)
@@ -1463,11 +1475,6 @@ function NeedyGreedy:AddInfoText(tooltip)
     local lineNum
     local helpText
 
-    if self.db.profile.detachedTooltip and not self:CheckOnlyShowInParty() then
-        lineNum = tooltip:AddLine()
-        tooltip:SetCell(lineNum, 1, L["You are not in a party"], nil, tooltip:GetColumnCount())
-    end
-
     tooltip:AddLine("")
 
     helpText = ""
@@ -1548,19 +1555,11 @@ end
 
 -- Use this when forcing display of detached tooltip
 function NeedyGreedy:CheckDisplayOptions()
-    if self:CheckOnlyShowInParty() and self:CheckShowInCombat() then
+    if self:CheckShowInCombat() then
         return true
     end
 
     return false
-end
-
-function NeedyGreedy:CheckOnlyShowInParty()
-    if self.db.profile.onlyShowInParty and (GetNumPartyMembers() == 0) then
-        return false
-    end
-
-    return true
 end
 
 function NeedyGreedy:CheckShowInCombat()
