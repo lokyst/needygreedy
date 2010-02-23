@@ -200,6 +200,18 @@ local options = {
                             get = "GetHideInCombat",
                             set = "SetHideInCombat",
                         },
+                        tooltipScale = {
+                            name = L["Scale"],
+                            desc = L["Adjust the scale of the detached tooltip"],
+                            type = "range",
+                            order = 16,
+                            min = 0.5,
+                            max= 2.0,
+                            step = 0.01,
+                            get = "GetTooltipScale",
+                            set = "SetTooltipScale",
+                        },
+
                     },
                 },
 
@@ -226,6 +238,7 @@ local defaults = {
         autoPopUp = true,
         resetInNewParty = "ask",
         resetInNewInstance = "ask",
+        tooltipScale = 1,
     }
 }
 
@@ -1130,6 +1143,15 @@ function NeedyGreedy:SetResetInNewInstance(info, resetInNewInstance)
     self.db.profile.resetInNewInstance = resetInNewInstance
 end
 
+function NeedyGreedy:GetTooltipScale(info)
+    return self.db.profile.tooltipScale
+end
+
+function NeedyGreedy:SetTooltipScale(info, tooltipScale)
+    self.db.profile.tooltipScale = tooltipScale
+    self:RefreshTooltip()
+end
+
 
 
 -- QTip Frames
@@ -1209,6 +1231,7 @@ function NeedyGreedy:ShowDetachedTooltip()
     -- Acquire a tooltip
     if not LibQTip:IsAcquired("NeedyGreedyReport") then
         self.detachedTooltip = LibQTip:Acquire("NeedyGreedyReport", 1, "LEFT")
+        self.detachedTooltip:SetScale(self.db.profile.tooltipScale)
 
         -- Add columns here because tooltip:Clear() preserves columns
         for i = 1, self.db.profile.nItems do
@@ -1259,6 +1282,7 @@ function NeedyGreedy:HideDetachedTooltip()
         self.detachedTooltip:Hide()
         self.detachedTooltip:SetScript("OnMouseDown", nil)
         self.detachedTooltip:SetScript("OnMouseUp", nil)
+        self.detachedTooltip:SetScale(1)
         LibQTip:Release(self.detachedTooltip)
         self.detachedTooltip = nil
     end
