@@ -21,10 +21,8 @@ local NeedyGreedyLDB = LibStub("LibDataBroker-1.1"):NewDataObject("NeedyGreedy",
             NeedyGreedy:ShowDBTooltip(frame)
             NeedyGreedy:HideDetachedTooltip()
             if NeedyGreedy.db.profile.detachedTooltip then
-                NeedyGreedy.detachedTooltipDisplayStatus = true
-                if NeedyGreedy:CheckDisplayOptions() then
-                    NeedyGreedy:ShowDetachedTooltip()
-                end
+                NeedyGreedy.db.profile.displayStatus = true
+                NeedyGreedy:RefreshTooltip()
             end
         elseif IsAltKeyDown() then
             NeedyGreedy:ClearItems()
@@ -235,7 +233,7 @@ local defaults = {
         displayIcons = true,
         detachedTooltip = false,
         displayTextLink = false,
-        detachedTooltipDisplayStatus = false,
+        displayStatus = false,
         minimap = { hide = false },
         filterLootMsgs = false,
         showOnParty = false,
@@ -534,16 +532,16 @@ function NeedyGreedy:PARTY_MEMBERS_CHANGED()
             confirmResetDialog()
         end
 
-        if self.db.profile.showOnParty and self.db.profile.detachedTooltip and not self.db.profile.detachedTooltipDisplayStatus then
-            self.db.profile.detachedTooltipDisplayStatus = true
+        if self.db.profile.showOnParty and self.db.profile.detachedTooltip and not self.db.profile.displayStatus then
+            self.db.profile.displayStatus = true
             self:ShowDetachedTooltip()
         end
 
     elseif (GetNumPartyMembers() == 0 and GetNumRaidMembers() == 0) then
         IS_IN_PARTY = false
 
-        if self.db.profile.showOnParty and self.db.profile.detachedTooltip and self.db.profile.detachedTooltipDisplayStatus then
-            self.db.profile.detachedTooltipDisplayStatus = false
+        if self.db.profile.showOnParty and self.db.profile.detachedTooltip and self.db.profile.displayStatus then
+            self.db.profile.displayStatus = false
             self:HideDetachedTooltip()
         end
 
@@ -1052,12 +1050,12 @@ function NeedyGreedy:SetDetachedTooltip(info, detachedTooltip)
     self.db.profile.detachedTooltip = detachedTooltip
     self:HideDBTooltip()
     if self.db.profile.detachedTooltip then
-        self.db.profile.detachedTooltipDisplayStatus = true
+        self.db.profile.displayStatus = true
         if self:CheckDisplayOptions() then
             self:ShowDetachedTooltip()
         end
     else
-        self.db.profile.detachedTooltipDisplayStatus = false
+        self.db.profile.displayStatus = false
         self:HideDetachedTooltip()
         -- Return to page one
         report.firstItem = 1
@@ -1575,10 +1573,10 @@ function NeedyGreedy:ToggleDisplay()
             WATCH_ITEM_BEING_ROLLED_ON = false
         end
         self:HideDetachedTooltip()
-        self.db.profile.detachedTooltipDisplayStatus = false
+        self.db.profile.displayStatus = false
     elseif self:CheckDisplayOptions() then
         self:ShowDetachedTooltip()
-        self.db.profile.detachedTooltipDisplayStatus = true
+        self.db.profile.displayStatus = true
     end
 
 end
@@ -1589,7 +1587,7 @@ function NeedyGreedy:DisplayDetachedTTCheck()
         return true
     end
 
-    if not self.db.profile.detachedTooltipDisplayStatus then
+    if not self.db.profile.displayStatus then
         return false
     end
 
@@ -1685,7 +1683,7 @@ end
 -- Slash Commands
 function NeedyGreedy:SlashHide()
     self.db.profile.detachedTooltip = true
-    self.db.profile.detachedTooltipDisplayStatus = false
+    self.db.profile.displayStatus = false
     if WATCH_ITEM_BEING_ROLLED_ON then
         WATCH_ITEM_BEING_ROLLED_ON = false
     end
@@ -1695,7 +1693,7 @@ end
 
 function NeedyGreedy:SlashShow()
     self.db.profile.detachedTooltip = true
-    self.db.profile.detachedTooltipDisplayStatus = true
+    self.db.profile.displayStatus = true
     self:RefreshTooltip()
     LibStub("AceConfigRegistry-3.0"):NotifyChange("NeedyGreedy")
 end
