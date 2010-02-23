@@ -305,7 +305,7 @@ local IS_IN_COMBAT = nil
 -- We track rolling on items like this to avoid the scenario where you're in
 -- combat the window pops up, you leave combat briefly before another add
 -- attacks and the window disappears as you're deciding
-local ITEM_IS_BEING_ROLLED_ON = nil
+local WATCH_ITEM_BEING_ROLLED_ON = nil
 
 -- For tracking grouped status
 local IS_IN_PARTY = nil
@@ -540,7 +540,7 @@ end
 
 
 -- Chat scanning and loot recording
-function NeedyGreedy:START_LOOT_ROLL(event, rollid)
+function NeedyGreedy:START_LOOT_ROLL(event, rollid, rollTime)
     local texture, name, count, quality = GetLootRollItemInfo(rollid)
     local link = GetLootRollItemLink(rollid)
     if quality >= self.db.profile.quality then
@@ -551,11 +551,12 @@ function NeedyGreedy:START_LOOT_ROLL(event, rollid)
             assigned = "",
             received = 0,
             choices = {},
-            rolls = {}
+            rolls = {},
+            rollTimeOut = GetTime() + rollTime/1000,
         })
 
         if self.db.profile.detachedTooltip and self.db.profile.autoPopUp then
-            ITEM_IS_BEING_ROLLED_ON = true
+            WATCH_ITEM_BEING_ROLLED_ON = true
             self:ShowDetachedTooltip()
         end
 
@@ -795,7 +796,7 @@ function NeedyGreedy:RecordReceived(link, player)
 
     -- This could be done in one of the other loops, but since I live with
     -- pedantic man, we will do this as a separate scan
-    if ITEM_IS_BEING_ROLLED_ON then
+    if WATCH_ITEM_BEING_ROLLED_ON then
         local itemsStillBeingRolledOn = 0
         for _, record in ipairs(items) do
             if record.received == 0 then
@@ -804,7 +805,7 @@ function NeedyGreedy:RecordReceived(link, player)
         end
 
         if itemsStillBeingRolledOn == 0 then
-            ITEM_IS_BEING_ROLLED_ON = false
+            WATCH_ITEM_BEING_ROLLED_ON = false
             self:RefreshTooltip()
         end
     end
@@ -930,17 +931,28 @@ end
 function NeedyGreedy:ExpireItems()
     local now = GetTime()
     local update = false
+    local displayTimeOut = true
+    local padding = 60
 
-    if self.db.profile.expiry == 0 then
-        return
-    end
     for rollid, record in ipairs(items) do
-        if record.received > 0 and now - record.received >= self.db.profile.expiry * 60 then
-            table.remove(items, rollid)
-            wipe(nameList)
-            update = true
+        if record.rollTimeOut and record.rollTimeOut > 0 and now < record.rollTimeOut + padding and WATCH_ITEM_BEING_ROLLED_ON then
+            displayTimeOut = false
+        end
+
+        if self.db.profile.expiry ~= 0 then
+            if record.received > 0 and now - record.received >= self.db.profile.expiry * 60 then
+                table.remove(items, rollid)
+                wipe(nameList)
+                update = true
+            end
         end
     end
+
+    if displayTimeOut and WATCH_ITEM_BEING_ROLLED_ON then
+        WATCH_ITEM_BEING_ROLLED_ON = false
+        self:RefreshTooltip()
+    end
+
     if update then
         self:UpdateReport()
     end
@@ -1509,6 +1521,9 @@ function NeedyGreedy:ToggleDisplay()
 
     -- Don't toggle display status if we can't see anything to toggle
     if self.detachedTooltip and self.detachedTooltip:IsShown() then
+        if WATCH_ITEM_BEING_ROLLED_ON then
+            WATCH_ITEM_BEING_ROLLED_ON = false
+        end
         self:HideDetachedTooltip()
         self.db.profile.detachedTooltipDisplayStatus = false
     elseif self:CheckDisplayOptions() then
@@ -1520,7 +1535,7 @@ end
 
 -- Only use this when not forcing display e.g. RefreshTooltip
 function NeedyGreedy:DisplayDetachedTTCheck()
-    if self.db.profile.autoPopUp and ITEM_IS_BEING_ROLLED_ON then
+    if self.db.profile.autoPopUp and WATCH_ITEM_BEING_ROLLED_ON then
         return true
     end
 
@@ -1629,6 +1644,9 @@ end
 function NeedyGreedy:SlashHide()
     self.db.profile.detachedTooltip = true
     self.db.profile.detachedTooltipDisplayStatus = false
+    if WATCH_ITEM_BEING_ROLLED_ON then
+        WATCH_ITEM_BEING_ROLLED_ON = false
+    end
     self:RefreshTooltip()
     LibStub("AceConfigRegistry-3.0"):NotifyChange("NeedyGreedy")
 end
