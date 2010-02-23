@@ -54,5 +54,6 @@ L["Reset the item list"] = true
 L["Show the detached tooltip"] = true
 L["Scale"] = true
 L["Adjust the scale of the detached tooltip"] = true
+L["Detached Tooltip"] = true
 
 end

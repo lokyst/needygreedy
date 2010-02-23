@@ -53,7 +53,6 @@ local options = {
         general = {
             name = L['General'],
             type = 'group',
-            childGroups = "tab",
             args = {
                 nItems = {
                     name = L["Display Items"],
@@ -161,62 +160,60 @@ local options = {
                     get = "GetShowGroupOnly",
                     set = "SetShowGroupOnly",
                 },
+            },
+        },
 
-                detachedTooltipOptions = {
-                    name = "Detached Tooltip options",
-                    type = "group",
-                    --inline = true,
-                    order = 200,
-                    args = {
-                        detachedTooltip = {
-                            name = L["Detach Tooltip"],
-                            desc = L["Display the roll information in a standalone window"],
-                            type = "toggle",
-                            order = 10,
-                            get = "GetDetachedTooltip",
-                            set = "SetDetachedTooltip",
-                        },
-                        autoPopUp = {
-                            name = L["Popup when rolling"],
-                            desc = L["Automatically show the detached tooltip when an item is being rolled on"],
-                            type = "toggle",
-                            order = 11,
-                            get = "GetAutoPopUp",
-                            set = "SetAutoPopUp",
-                        },
-                        showOnParty = {
-                            name = L["Show in party"],
-                            desc = L["Display the detached window when joining a party and hide the tooltip when leaving a party"],
-                            type = "toggle",
-                            order = 12,
-                            get = "GetShowOnParty",
-                            set = "SetShowOnParty",
-                        },
-                        hideInCombat = {
-                            name = L["Hide in combat"],
-                            desc = L["Only display the detached window when not in combat"],
-                            type = "toggle",
-                            order = 14,
-                            get = "GetHideInCombat",
-                            set = "SetHideInCombat",
-                        },
-                        tooltipScale = {
-                            name = L["Scale"],
-                            desc = L["Adjust the scale of the detached tooltip"],
-                            type = "range",
-                            order = 16,
-                            min = 0.5,
-                            max= 2.0,
-                            step = 0.01,
-                            get = "GetTooltipScale",
-                            set = "SetTooltipScale",
-                        },
-
-                    },
+        detachedTooltipOptions = {
+            name = L["Detached Tooltip"],
+            type = "group",
+            args = {
+                detachedTooltip = {
+                    name = L["Detach Tooltip"],
+                    desc = L["Display the roll information in a standalone window"],
+                    type = "toggle",
+                    order = 10,
+                    get = "GetDetachedTooltip",
+                    set = "SetDetachedTooltip",
+                },
+                autoPopUp = {
+                    name = L["Popup when rolling"],
+                    desc = L["Automatically show the detached tooltip when an item is being rolled on"],
+                    type = "toggle",
+                    order = 11,
+                    get = "GetAutoPopUp",
+                    set = "SetAutoPopUp",
+                },
+                showOnParty = {
+                    name = L["Show in party"],
+                    desc = L["Display the detached window when joining a party and hide the tooltip when leaving a party"],
+                    type = "toggle",
+                    order = 12,
+                    get = "GetShowOnParty",
+                    set = "SetShowOnParty",
+                },
+                hideInCombat = {
+                    name = L["Hide in combat"],
+                    desc = L["Only display the detached window when not in combat"],
+                    type = "toggle",
+                    order = 14,
+                    get = "GetHideInCombat",
+                    set = "SetHideInCombat",
+                },
+                tooltipScale = {
+                    name = L["Scale"],
+                    desc = L["Adjust the scale of the detached tooltip"],
+                    type = "range",
+                    order = 16,
+                    min = 0.5,
+                    max= 2.0,
+                    step = 0.01,
+                    get = "GetTooltipScale",
+                    set = "SetTooltipScale",
                 },
 
             },
         },
+
     }
 }
 
@@ -441,6 +438,7 @@ function NeedyGreedy:OnInitialize()
     -- Set up GUI configuration
     local ACD = LibStub("AceConfigDialog-3.0")
     ACD:AddToBlizOptions("NeedyGreedy", "NeedyGreedy", nil, "general")
+    ACD:AddToBlizOptions("NeedyGreedy", L["Detached Tooltip"], "NeedyGreedy", "detachedTooltipOptions")
     ACD:AddToBlizOptions("NeedyGreedy", L["Profile"], "NeedyGreedy", "profile")
 
     -- Register slash options table
