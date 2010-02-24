@@ -221,6 +221,21 @@ local options = {
             },
         },
 
+        dataBrokerOptions = {
+            name = L["DataBroker Tooltip"],
+            type = "group",
+            args = {
+                suppressInRaid = {
+                    name = L["Hide In Raid"],
+                    desc = L["Suppress the display of the LibDataBroker tooltip when in a raid"],
+                    type = "toggle",
+                    order = 10,
+                    get = "GetSuppressInRaid",
+                    set = "SetSuppressInRaid",
+                },
+            },
+        },
+
     }
 }
 
@@ -244,6 +259,7 @@ local defaults = {
         resetInNewInstance = "ask",
         tooltipScale = 1,
         lockTooltip = false,
+        suppressInRaid = false,
     }
 }
 
@@ -327,6 +343,7 @@ local WATCH_ITEM_BEING_ROLLED_ON = nil
 
 -- For tracking grouped status
 local IS_IN_PARTY = nil
+local IS_IN_RAID = nil
 
 -- For tracking ghost status
 local WAS_GHOST = nil
@@ -447,6 +464,7 @@ function NeedyGreedy:OnInitialize()
     local ACD = LibStub("AceConfigDialog-3.0")
     ACD:AddToBlizOptions("NeedyGreedy", "NeedyGreedy", nil, "general")
     ACD:AddToBlizOptions("NeedyGreedy", L["Detached Tooltip"], "NeedyGreedy", "detachedTooltipOptions")
+    ACD:AddToBlizOptions("NeedyGreedy", L["DataBroker Tooltip"], "NeedyGreedy", "dataBrokerOptions")
     ACD:AddToBlizOptions("NeedyGreedy", L["Profile"], "NeedyGreedy", "profile")
 
     -- Register slash options table
@@ -463,6 +481,7 @@ function NeedyGreedy:OnEnable()
     self:RegisterEvent("PLAYER_REGEN_DISABLED")
     self:RegisterEvent("PLAYER_REGEN_ENABLED")
     self:RegisterEvent("PLAYER_ALIVE")
+    self:RegisterEvent("RAID_ROSTER_UPDATE")
 
     self:ScheduleRepeatingTimer("ExpireItems", 10)
 
@@ -539,6 +558,7 @@ function NeedyGreedy:PARTY_MEMBERS_CHANGED()
 
     elseif (GetNumPartyMembers() == 0 and GetNumRaidMembers() == 0) then
         IS_IN_PARTY = false
+        IS_IN_RAID = false
 
         if self.db.profile.showOnParty and self.db.profile.detachedTooltip and self.db.profile.displayStatus then
             self.db.profile.displayStatus = false
@@ -566,6 +586,14 @@ function NeedyGreedy:PLAYER_ALIVE()
         WAS_GHOST = true
     elseif WAS_GHOST then
         WAS_GHOST = false
+    end
+end
+
+function NeedyGreedy:RAID_ROSTER_UPDATE()
+    if GetNumRaidMembers() > 0 then
+        IS_IN_RAID = true
+    else
+        IS_IN_RAID = false
     end
 end
 
@@ -1167,6 +1195,15 @@ function NeedyGreedy:SetLockTooltip(info, lockTooltip)
     self:RefreshTooltip()
 end
 
+function NeedyGreedy:GetSuppressInRaid(info)
+    return self.db.profile.suppressInRaid
+end
+
+function NeedyGreedy:SetSuppressInRaid(info, suppressInRaid)
+    self.db.profile.suppressInRaid = suppressInRaid
+    self:RefreshTooltip()
+end
+
 
 
 -- QTip Frames
@@ -1538,8 +1575,10 @@ end
 function NeedyGreedy:BuildDBReportTooltip(tooltip)
     tooltip:Clear()
     self:AddHeaderText(tooltip)
-    self:PopulateReportTooltip(tooltip)
-    self:AddPagerArrows(tooltip)
+    if self:DisplayLDBTTCheck() then
+        self:PopulateReportTooltip(tooltip)
+        self:AddPagerArrows(tooltip)
+    end
     self:AddInfoText(tooltip)
 end
 
@@ -1610,6 +1649,24 @@ function NeedyGreedy:CheckShowInCombat()
 
     return true
 end
+
+function NeedyGreedy:DisplayLDBTTCheck()
+    if self:CheckSuppressInRaid() then
+        return false
+    end
+
+    return true
+end
+
+function NeedyGreedy:CheckSuppressInRaid()
+    if IS_IN_RAID and self.db.profile.suppressInRaid then
+        return true
+    end
+
+    return false
+end
+
+
 
 
 

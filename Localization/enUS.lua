@@ -57,5 +57,8 @@ L["Adjust the scale of the detached tooltip"] = true
 L["Detached Tooltip"] = true
 L["Lock Tooltip"] = true
 L["Adjust the position of the detached tooltip"] = true
+L["DataBroker Tooltip"] = true
+L["Hide In Raid"] = true
+L["Suppress the display of the LibDataBroker tooltip when in a raid"] = true
 
 end
