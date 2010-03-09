@@ -348,6 +348,9 @@ local IS_IN_RAID = nil
 -- For tracking ghost status
 local WAS_GHOST = nil
 
+-- For tracking instance changes
+local INSTANCE_NAME = nil
+
 -- Utility functions
 local function sanitizePattern(pattern)
     pattern = string.gsub(pattern, "%(", "%%(")
@@ -511,7 +514,18 @@ function NeedyGreedy:OnDisable()
 end
 
 function NeedyGreedy:PLAYER_ENTERING_WORLD()
-    if IS_IN_COMBAT then return end     -- The prophet Tharonja's phases do this
+    local inInstance, instanceType = IsInInstance()
+    local newInstanceName = GetInstanceInfo()
+
+    -- PLAYER_ENTERING_WORLD events can trigger without any
+    -- discernable change to the instance e.g. during
+    -- Prophet Tharonja, CoT:CoS when the dragonkin reveal themselves
+    -- Swamp Lord Musalek fight in Underbog
+    if newInstanceName == INSTANCE_NAME then
+        return
+    else
+        INSTANCE_NAME = newInstanceName
+    end
 
     wipe(nameList)
     if self.db.profile.detachedTooltip then
@@ -520,7 +534,6 @@ function NeedyGreedy:PLAYER_ENTERING_WORLD()
         end
     end
 
-    local inInstance, instanceType = IsInInstance()
     if inInstance and (instanceType == "party" or instanceType == "raid") then
         -- Don't ask when making a graveyard run
         if not WAS_GHOST then
