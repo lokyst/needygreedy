@@ -637,153 +637,68 @@ function NeedyGreedy:START_LOOT_ROLL(event, rollid, rollTime)
     end
 end
 
-function NeedyGreedy:CHAT_MSG_LOOT(event, msg)
-    local me = UnitName("player")
-    local player, link, number
+local CHAT_MSG_TABLE = {
+    {LOOT_ROLL_YOU_WON, "RecordAwarded", {1, "me", nil, nil}},
+    {LOOT_ROLL_WON, "RecordAwarded", {2, 1, nil, nil}},
+    {LOOT_ROLL_ALL_PASSED, "RecordAwarded", {1, "---", nil, nil}},
+    {LOOT_ROLL_PASSED_AUTO, "RecordChoice", {2, 1, nil, "pass"}},
+    {LOOT_ROLL_PASSED_AUTO_FEMALE, "RecordChoice", {2, 1, nil, "pass"}},
+    {LOOT_ROLL_NEED_SELF, "RecordChoice", {1, "me", nil, "need"}},
+    {LOOT_ROLL_GREED_SELF, "RecordChoice", {1, "me", nil, "greed"}},
+    {LOOT_ROLL_PASSED_SELF, "RecordChoice", {1, "me", nil, "pass"}},
+    {LOOT_ROLL_PASSED_SELF_AUTO, "RecordChoice", {1, "me", nil, "pass"}},
+    {LOOT_ROLL_NEED, "RecordChoice", {2, 1, nil, "need"}},
+    {LOOT_ROLL_GREED, "RecordChoice", {2, 1, nil, "greed"}},
+    {LOOT_ROLL_PASSED, "RecordChoice", {2, 1, nil, "pass"}},
+    {LOOT_ROLL_DISENCHANT_SELF, "RecordChoice", {1, "me", nil, "disenchant"}},
+    {LOOT_ROLL_DISENCHANT, "RecordChoice", {2, 1, nil, "disenchant"}},
+    {LOOT_ROLL_ROLLED_NEED, "RecordRoll", {2, 3, 1, nil}},
+    {LOOT_ROLL_ROLLED_GREED, "RecordRoll", {2, 3, 1, nil}},
+    {LOOT_ROLL_ROLLED_DE, "RecordRoll", {2, 3, 1, nil}},
+    {LOOT_ITEM_PUSHED_SELF, "RecordReceived", {1, "me", nil, nil}},
+    {LOOT_ITEM_PUSHED_SELF_MULTIPLE, "RecordReceived", {1, "me", nil, nil}},
+    {LOOT_ITEM_SELF, "RecordReceived", {1, "me", nil, nil}},
+    {LOOT_ITEM_SELF_MULTIPLE, "RecordReceived", {1, "me", nil, nil}},
+    {LOOT_ITEM, "RecordReceived", {2, 1, nil, nil}},
+    {LOOT_ITEM_MULTIPLE, "RecordReceived", {2, 1, nil, nil}},
+}
 
-    link = self:unformat(LOOT_ROLL_YOU_WON, msg)
-    if link then
-        self:RecordAwarded(link, me)
-        return
+function NeedyGreedy:CHAT_MSG_LOOT(event,msg)
+    local functionName, link, player, roll, type
+    local stringValues, inputs
+
+    for _, message in ipairs(CHAT_MSG_TABLE) do
+        stringValues = {self:unformat(message[1], msg)}
+        if #stringValues > 0 then
+            functionName = message[2]
+            inputs = message[3]
+            link = stringValues[inputs[1]]
+            if inputs[2] == "me" then
+                player = UnitName("player")
+            elseif inputs[2] == "---" then
+                player = "---"
+            else
+                player = stringValues[inputs[2]]
+            end
+            if inputs[3] then roll = stringValues[inputs[3]] end
+            type = inputs[4]
+            self:RecordParser(functionName, link, player, roll, type)
+            break
+        end
     end
+end
 
-    player, link = self:unformat(LOOT_ROLL_WON, msg)
-    if player then
+function NeedyGreedy:RecordParser(functionName, link, player, roll, type)
+    if functionName == "RecordAwarded" then
         self:RecordAwarded(link, player)
-        return
-    end
-
-    link = self:unformat(LOOT_ROLL_ALL_PASSED, msg)
-    if link then
-        self:RecordAwarded(link, "---")
-        return
-    end
-
-    player, link = self:unformat(LOOT_ROLL_PASSED_AUTO, msg)
-    if player then
-        self:RecordChoice(link, player, "pass")
-        return
-    end
-
-    player, link = self:unformat(LOOT_ROLL_PASSED_AUTO_FEMALE, msg)
-    if player then
-        self:RecordChoice(link, player, "pass")
-        return
-    end
-
-    link = self:unformat(LOOT_ROLL_NEED_SELF, msg)
-    if link then
-        self:RecordChoice(link, me, "need")
-        return
-    end
-
-    link = self:unformat(LOOT_ROLL_GREED_SELF, msg)
-    if link then
-        self:RecordChoice(link, me, "greed")
-        return
-    end
-
-    link = self:unformat(LOOT_ROLL_PASSED_SELF, msg)
-    if link then
-        self:RecordChoice(link, me, "pass")
-        return
-    end
-
-    link = self:unformat(LOOT_ROLL_PASSED_SELF_AUTO, msg)
-    if link then
-        self:RecordChoice(link, me, "pass")
-        return
-    end
-
-    player, link = self:unformat(LOOT_ROLL_NEED, msg)
-    if player then
-        self:RecordChoice(link, player, "need")
-        return
-    end
-
-    player, link = self:unformat(LOOT_ROLL_GREED, msg)
-    if player then
-        self:RecordChoice(link, player, "greed")
-        return
-    end
-
-    player, link = self:unformat(LOOT_ROLL_PASSED, msg)
-    if player then
-        self:RecordChoice(link, player, "pass")
-        return
-    end
-
-    number, link, player = self:unformat(LOOT_ROLL_ROLLED_NEED, msg)
-    if number then
-        self:RecordRoll(link, player, number)
-        return
-    end
-
-    number, link, player = self:unformat(LOOT_ROLL_ROLLED_GREED, msg)
-    if number then
-        self:RecordRoll(link, player, number)
-        return
-    end
-
-    link = self:unformat(LOOT_ITEM_PUSHED_SELF, msg)
-    if link then
-        self:RecordReceived(link, me)
-        return
-    end
-
-    link, number = self:unformat(LOOT_ITEM_PUSHED_SELF_MULTIPLE, msg)
-    if link then
-        self:RecordReceived(link, me)
-        return
-    end
-
-    link = self:unformat(LOOT_ITEM_SELF, msg)
-    if link then
-        self:RecordReceived(link, me)
-        return
-    end
-
-    link, number = self:unformat(LOOT_ITEM_SELF_MULTIPLE, msg)
-    if link then
-        self:RecordReceived(link, me)
-        return
-    end
-
-    player, link = self:unformat(LOOT_ITEM, msg)
-    if player then
+    elseif functionName == "RecordChoice" then
+        self:RecordChoice(link, player, type)
+    elseif functionName == "RecordRoll" then
+        self:RecordRoll(link, player, roll)
+    elseif functionName == "RecordReceived" then
         self:RecordReceived(link, player)
-        return
-    end
-
-    player, link, number = self:unformat(LOOT_ITEM_MULTIPLE, msg)
-    if player then
-        self:RecordReceived(link, player)
-        return
-    end
-
-    -- To handle new disenchant rules
-    link = self:unformat(LOOT_ROLL_DISENCHANT_SELF, msg)
-    if link then
-        self:RecordChoice(link, me, "disenchant")
-        return
-    end
-
-    player, link = self:unformat(LOOT_ROLL_DISENCHANT, msg)
-    if link then
-        self:RecordChoice(link, player, "disenchant")
-        return
-    end
-
-    player, link = self:unformat(LOOT_ROLL_DISENCHANT, msg)
-    if link then
-        self:RecordChoice(link, player, "disenchant")
-        return
-    end
-
-    number, link, player = self:unformat(LOOT_ROLL_ROLLED_DE, msg)
-    if number then
-        self:RecordRoll(link, player, number)
-        return
+    else
+        self:Print("Unrecognised function name: " .. tostring(functionName))
     end
 end
 
