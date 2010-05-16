@@ -1294,6 +1294,13 @@ function NeedyGreedy:ShowDBTooltip(frame)
         end
 
         if frame then self.dbTooltip:SmartAnchorTo(frame) end
+
+        self.dbTooltip:SetScript("OnHide", function()
+            if self.dbTooltip then
+                LibQTip:Release(self.dbTooltip)
+                self.dbTooltip = nil
+            end
+        end)
     end
 
     -- Show it, et voilà !
