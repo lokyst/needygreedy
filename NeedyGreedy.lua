@@ -648,7 +648,7 @@ function NeedyGreedy:START_LOOT_ROLL(event, rollid, rollTime)
             self:ShowDetachedTooltip()
             -- Check if a new roll was started before the delayed script was called
             if self.db.profile.autoHideDelay > 0 and ROLL_TIMER then
-                self:CancelTimer(ROLL_TIMER)
+                self:CancelTimer(ROLL_TIMER, true)
             end
         end
 
