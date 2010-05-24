@@ -189,6 +189,17 @@ local options = {
                     get = "GetShowOnParty",
                     set = "SetShowOnParty",
                 },
+                tooltipAutoHideDelay = {
+                    name = L["Autohide delay"],
+                    desc = L["Time to remain visible after the last item has been received (Popup mode only)"],
+                    type = "range",
+                    order = 13,
+                    min = 0,
+                    max = 60,
+                    step = 1,
+                    get = "GetAutoHideDelay",
+                    set = "SetAutoHideDelay",
+                },
                 hideInCombat = {
                     name = L["Hide in combat"],
                     desc = L["Only display the detached window when not in combat"],
@@ -260,6 +271,7 @@ local defaults = {
         tooltipScale = 1,
         lockTooltip = false,
         suppressInRaid = false,
+        autoHideDelay = 0,
     }
 }
 
@@ -340,6 +352,9 @@ local IS_IN_COMBAT = nil
 -- combat the window pops up, you leave combat briefly before another add
 -- attacks and the window disappears as you're deciding
 local WATCH_ITEM_BEING_ROLLED_ON = nil
+
+-- To track if there is a scheduled script
+local ROLL_TIMER = nil
 
 -- For tracking grouped status
 local IS_IN_PARTY = nil
@@ -631,6 +646,10 @@ function NeedyGreedy:START_LOOT_ROLL(event, rollid, rollTime)
         if self.db.profile.detachedTooltip and self.db.profile.autoPopUp then
             WATCH_ITEM_BEING_ROLLED_ON = true
             self:ShowDetachedTooltip()
+            -- Check if a new roll was started before the delayed script was called
+            if self.db.profile.autoHideDelay > 0 and ROLL_TIMER then
+                self:CancelTimer(ROLL_TIMER)
+            end
         end
 
         self:UpdateReport()
@@ -793,12 +812,23 @@ function NeedyGreedy:RecordReceived(link, player)
         end
 
         if itemsStillBeingRolledOn == 0 then
-            WATCH_ITEM_BEING_ROLLED_ON = false
-            self:RefreshTooltip()
+            local autoHideDelay = self.db.profile.autoHideDelay
+
+            if autoHideDelay == 0 then
+                self:RollPostProcessing()
+            else
+                ROLL_TIMER = self:ScheduleTimer("RollPostProcessing", autoHideDelay)
+            end
         end
     end
 
     self:UpdateReport()
+end
+
+function NeedyGreedy:RollPostProcessing()
+    WATCH_ITEM_BEING_ROLLED_ON = false
+    ROLL_TIMER = nil
+    self:RefreshTooltip()
 end
 
 function NeedyGreedy:ClearItems()
@@ -923,10 +953,12 @@ function NeedyGreedy:ExpireItems()
     local padding = 60
 
     for rollid, record in ipairs(items) do
+        -- Are there any unresolved rolls past expiry time
         if record.rollTimeOut and record.rollTimeOut > 0 and now < record.rollTimeOut + padding and WATCH_ITEM_BEING_ROLLED_ON then
             displayTimeOut = false
         end
 
+        -- Are there items that need to be expired
         if self.db.profile.expiry ~= 0 then
             if record.received > 0 and now - record.received >= self.db.profile.expiry * 60 then
                 table.remove(items, rollid)
@@ -937,8 +969,7 @@ function NeedyGreedy:ExpireItems()
     end
 
     if displayTimeOut and WATCH_ITEM_BEING_ROLLED_ON then
-        WATCH_ITEM_BEING_ROLLED_ON = false
-        self:RefreshTooltip()
+        self:RollPostProcessing()
     end
 
     if update then
@@ -1129,6 +1160,14 @@ end
 
 function NeedyGreedy:SetSuppressInRaid(info, suppressInRaid)
     self.db.profile.suppressInRaid = suppressInRaid
+    self:RefreshTooltip()
+end
+function NeedyGreedy:GetAutoHideDelay(info)
+    return self.db.profile.autoHideDelay
+end
+
+function NeedyGreedy:SetAutoHideDelay(info, autoHideDelay)
+    self.db.profile.autoHideDelay = autoHideDelay
     self:RefreshTooltip()
 end
 
