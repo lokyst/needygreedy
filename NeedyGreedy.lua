@@ -1681,7 +1681,7 @@ local function FilterLootMsg(ChatFrameSelf, event, ...)
         end
     end
 
-    return false, msg, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11
+    return false, ...
 end
 
 function NeedyGreedy:EnableChatFilter()
