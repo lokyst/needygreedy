@@ -62,5 +62,7 @@ L["Hide In Raid"] = true
 L["Suppress the display of the LibDataBroker tooltip when in a raid"] = true
 L["Autohide delay"] = true
 L["Time to remain visible after the last item has been received (Popup mode only)"] = true
+L["Loot Summary"] = true
+L["Print loot roll summary message to chat frame"] = true
 
 end

@@ -150,6 +150,14 @@ local options = {
                     get = "GetFilterLootMsgs",
                     set = "SetFilterLootMsgs",
                 },
+                noSpamMode = {
+                    name = L["Loot Summary"],
+                    desc = L["Print loot roll summary message to chat frame"],
+                    type = "toggle",
+                    order = 36,
+                    get = "GetNoSpamMode",
+                    set = "SetNoSpamMode",
+                },
                 showGroupOnly = {
                     name = L["Hide Non-Members"],
                     desc = L["Only display the names of members currently in your party"],
@@ -272,6 +280,7 @@ local defaults = {
         lockTooltip = false,
         suppressInRaid = false,
         autoHideDelay = 0,
+        noSpamMode = false,
     }
 }
 
@@ -514,6 +523,10 @@ function NeedyGreedy:OnEnable()
         self:EnableChatFilter()
     end
 
+    if self.db.profile.noSpamMode then
+        self:EnableNoSpamMode()
+    end
+
     self:SetShowLootSpam()
 end
 
@@ -683,6 +696,56 @@ local CHAT_MSG_TABLE = {
     {LOOT_ITEM_MULTIPLE, "RecordReceived", {2, 1, nil, nil}},
 }
 
+local CHAT_MSG_NO_SPAM_TABLE = {
+    LOOT_ROLL_WON_NO_SPAM_DE, -- = "%1$s won: %3$s |cff818181(Disenchant - %2$d)|r";
+    LOOT_ROLL_WON_NO_SPAM_GREED, --  = "%1$s won: %3$s |cff818181(Greed - %2$d)|r";
+    LOOT_ROLL_WON_NO_SPAM_NEED, -- = "%1$s won: %3$s |cff818181(Need - %2$d)|r";
+    LOOT_ROLL_YOU_WON_NO_SPAM_DE, -- = "You won: %2$s |cff818181(Disenchant - %1$d)|r";
+    LOOT_ROLL_YOU_WON_NO_SPAM_GREED, -- = "You won: %2$s |cff818181(Greed - %1$d)|r";
+    LOOT_ROLL_YOU_WON_NO_SPAM_NEED, -- = "You won: %2$s |cff818181(Need - %1$d)|r";
+}
+
+function NeedyGreedy:NoSpamMessage(link, player)
+    local printString
+    local me = UnitName("player")
+    local item
+
+    for _, record in ipairs(items) do
+        if record.assigned == player and record.link == link then
+            item = record
+            break
+        end
+    end
+
+    if not item then
+        DevTools_Dump(link .. " " .. player)
+        return
+    end
+
+    local rollType = item.choices[player]
+    local roll = item.rolls[player]
+    local r, g, b = GetMessageTypeColor("CHAT_MSG_LOOT")
+
+    if player == me then
+        if rollType == "disenchant" then
+            printString = LOOT_ROLL_YOU_WON_NO_SPAM_DE:format(roll, link)
+        elseif rollType == "greed" then
+            printString = LOOT_ROLL_YOU_WON_NO_SPAM_GREED:format(roll, link)
+        elseif rollType == "need" then
+            printString = LOOT_ROLL_YOU_WON_NO_SPAM_NEED:format(roll, link)
+        end
+    else
+        if rollType == "disenchant" then
+            printString = LOOT_ROLL_WON_NO_SPAM_DE:format(player, roll, link)
+        elseif rollType == "greed" then
+            printString = LOOT_ROLL_WON_NO_SPAM_GREED:format(player, roll, link)
+        elseif rollType == "need" then
+            printString = LOOT_ROLL_WON_NO_SPAM_NEED:format(player, roll, link)
+        end
+    end
+    DEFAULT_CHAT_FRAME:AddMessage(printString, r, g, b)
+end
+
 function NeedyGreedy:CHAT_MSG_LOOT(event,msg)
     local functionName, link, player, roll, type
     local stringValues, inputs
@@ -711,6 +774,12 @@ end
 function NeedyGreedy:RecordParser(functionName, link, player, roll, type)
     if functionName == "RecordAwarded" then
         self:RecordAwarded(link, player)
+
+        -- if no spam filter option turned on
+        if self.db.profile.noSpamMode then
+            self:NoSpamMessage(link, player)
+        end
+
     elseif functionName == "RecordChoice" then
         self:RecordChoice(link, player, type)
     elseif functionName == "RecordRoll" then
@@ -1176,7 +1245,18 @@ function NeedyGreedy:SetAutoHideDelay(info, autoHideDelay)
     self:RefreshTooltip()
 end
 
+function NeedyGreedy:GetNoSpamMode(info)
+    return self.db.profile.noSpamMode
+end
 
+function NeedyGreedy:SetNoSpamMode(info, noSpamMode)
+    self.db.profile.noSpamMode = noSpamMode
+    if noSpamMode then
+        self:EnableNoSpamMode()
+    else
+        self:DisableNoSpamMode()
+    end
+end
 
 -- QTip Frames
 local LibQTip = LibStub('LibQTip-1.0')
@@ -1650,7 +1730,25 @@ end
 
 
 -- Chat filter functions
-local FILTER_CHAT_LOOT_MSGS = {
+local FILTER_CHAT_LOOT_MSGS = {}
+
+local ORIG_FILTER_CHAT_LOOT_MSGS = {
+    LOOT_ROLL_DISENCHANT,
+    LOOT_ROLL_DISENCHANT_SELF,
+    LOOT_ROLL_GREED,
+    LOOT_ROLL_GREED_SELF,
+    LOOT_ROLL_NEED,
+    LOOT_ROLL_NEED_SELF,
+    LOOT_ROLL_PASSED,
+    LOOT_ROLL_PASSED_AUTO,
+    LOOT_ROLL_PASSED_AUTO_FEMALE,
+    LOOT_ROLL_PASSED_SELF,
+    LOOT_ROLL_PASSED_SELF_AUTO,
+    LOOT_ROLL_ROLLED_DE,
+    LOOT_ROLL_ROLLED_GREED,
+    LOOT_ROLL_ROLLED_NEED,
+}
+local NO_SPAM_FILTER_CHAT_LOOT_MSGS = {
     --LOOT_ROLL_ALL_PASSED,
     LOOT_ROLL_DISENCHANT,
     LOOT_ROLL_DISENCHANT_SELF,
@@ -1666,8 +1764,8 @@ local FILTER_CHAT_LOOT_MSGS = {
     LOOT_ROLL_ROLLED_DE,
     LOOT_ROLL_ROLLED_GREED,
     LOOT_ROLL_ROLLED_NEED,
-    --LOOT_ROLL_WON,
-    --LOOT_ROLL_YOU_WON,
+    LOOT_ROLL_WON,
+    LOOT_ROLL_YOU_WON,
     --LOOT_ITEM,
     --LOOT_ITEM_MULTIPLE,
     --LOOT_ITEM_PUSHED_SELF,
@@ -1686,6 +1784,14 @@ local function FilterLootMsg(ChatFrameSelf, event, ...)
     end
 
     return false, ...
+end
+
+function NeedyGreedy:EnableNoSpamMode()
+    FILTER_CHAT_LOOT_MSGS = NO_SPAM_FILTER_CHAT_LOOT_MSGS
+end
+
+function NeedyGreedy:DisableNoSpamMode()
+    FILTER_CHAT_LOOT_MSGS = ORIG_FILTER_CHAT_LOOT_MSGS
 end
 
 function NeedyGreedy:EnableChatFilter()
