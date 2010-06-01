@@ -167,18 +167,35 @@ local options = {
                     set = "SetHighlightSelf",
                 },
                 highlightSelfColor = {
-                    name = "HighLightSelf Color",
+                    name = L["Highlight Self Color"],
                     type = "color",
                     order = 38,
                     get = "GetHighlightSelfColor",
                     set = "SetHighlightSelfColor",
                     hasAlpha = false,
                 },
+                highlightWinner = {
+                    name = L["Highlight Winner"],
+                    desc = L["Color winning loot rolls differently"],
+                    type = "toggle",
+                    order = 40,
+                    get = "GetHighlightWinner",
+                    set = "SetHighlightWinner",
+                },
+
+                highlightWinnerColor = {
+                    name = L["HighLight Winner Color"],
+                    type = "color",
+                    order = 41,
+                    get = "GetHighlightWinnerColor",
+                    set = "GetHighlightWinnerColor",
+                    hasAlpha = false,
+                },
                 showGroupOnly = {
                     name = L["Hide Non-Members"],
                     desc = L["Only display the names of members currently in your party"],
                     type = "toggle",
-                    order = 40,
+                    order = 50,
                     get = "GetShowGroupOnly",
                     set = "SetShowGroupOnly",
                 },
@@ -299,6 +316,8 @@ local defaults = {
         noSpamMode = false,
         highlightSelf = false,
         highlightSelfColor = {1, 0.8, 0, 1},
+        highlightWinner = false,
+        highlightWinnerColor = {0, 1, 0, 1},
     }
 }
 
@@ -1023,18 +1042,22 @@ end
 
 function NeedyGreedy:RollText(number, winner, winnerIsSelf)
     local hexColor = ""
-    local r, g, b, a = unpack(self.db.profile.highlightSelfColor)
+    local r, g, b, a = unpack({1, 1, 1, 1})
 
     if number then
         number = " - " .. number
-        if winner then
-            if self.db.profile.highlightSelf and winnerIsSelf then
-                hexColor = string.format("|cff%x%x%x", 255*r, 255*g, 255*b)
-            else
-                hexColor = gC
-            end
-            number = hexColor .. number .. "|r"
+        if self.db.profile.highlightWinner and winner then
+            r, g, b, a = unpack(self.db.profile.highlightWinnerColor)
+            hexColor = string.format("|cff%2X%2X%2X", 255*r, 255*g, 255*b)
         end
+
+        if self.db.profile.highlightSelf and winnerIsSelf then
+            r, g, b, a = unpack(self.db.profile.highlightSelfColor)
+            hexColor = string.format("|cff%2X%2X%2X", 255*r, 255*g, 255*b)
+        end
+
+        number = hexColor .. number .. "|r"
+
         return number
     else
         return ""
@@ -1303,6 +1326,24 @@ end
 
 function NeedyGreedy:SetHighlightSelfColor(info, r, g, b, a)
     self.db.profile.highlightSelfColor = {r, g, b, a}
+    self:RefreshTooltip()
+end
+
+function NeedyGreedy:GetHighlightWinner(info)
+    return self.db.profile.highlightWinner
+end
+
+function NeedyGreedy:SetHighlightWinner(info, highlightWinner)
+    self.db.profile.highlightWinner = highlightWinner
+    self:RefreshTooltip()
+end
+
+function NeedyGreedy:GetHighlightWinnerColor(info)
+    return unpack(self.db.profile.highlightWinnerColor)
+end
+
+function NeedyGreedy:SetHighlightWinnerColor(info, r, g, b, a)
+    self.db.profile.highlightWinnerColor = {r, g, b, a}
     self:RefreshTooltip()
 end
 

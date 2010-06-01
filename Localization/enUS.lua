@@ -65,6 +65,10 @@ L["Time to remain visible after the last item has been received (Popup mode only
 L["Loot Summary"] = true
 L["Print loot roll summary message to chat frame"] = true
 L["Highlight Self"] = true
+L["Highlight Self Color"] = true
 L["Color loot you have won differently"] = true
+L["Highlight Winner"] = true
+L["Color winning loot rolls differently"] = true
+L["HighLight Winner Color"] = true
 
 end
