@@ -158,6 +158,22 @@ local options = {
                     get = "GetNoSpamMode",
                     set = "SetNoSpamMode",
                 },
+                highlightSelf = {
+                    name = L["Highlight Self"],
+                    desc = L["Color loot you have won differently"],
+                    type = "toggle",
+                    order = 37,
+                    get = "GetHighlightSelf",
+                    set = "SetHighlightSelf",
+                },
+                highlightSelfColor = {
+                    name = "HighLightSelf Color",
+                    type = "color",
+                    order = 38,
+                    get = "GetHighlightSelfColor",
+                    set = "SetHighlightSelfColor",
+                    hasAlpha = false,
+                },
                 showGroupOnly = {
                     name = L["Hide Non-Members"],
                     desc = L["Only display the names of members currently in your party"],
@@ -281,6 +297,8 @@ local defaults = {
         suppressInRaid = false,
         autoHideDelay = 0,
         noSpamMode = false,
+        highlightSelf = false,
+        highlightSelfColor = {1, 0.8, 0, 1},
     }
 }
 
@@ -743,6 +761,9 @@ function NeedyGreedy:NoSpamMessage(link, player)
             printString = LOOT_ROLL_WON_NO_SPAM_NEED:format(player, roll, link)
         end
     end
+    if self.db.profile.highlightSelf and player == me then
+        r, g, b = unpack(self.db.profile.highlightSelfColor)
+    end
     DEFAULT_CHAT_FRAME:AddMessage(printString, r, g, b)
 end
 
@@ -1000,11 +1021,19 @@ function NeedyGreedy:ChoiceText(choice)
     return ""
 end
 
-function NeedyGreedy:RollText(number, winner)
+function NeedyGreedy:RollText(number, winner, winnerIsSelf)
+    local hexColor = ""
+    local r, g, b, a = unpack(self.db.profile.highlightSelfColor)
+
     if number then
         number = " - " .. number
         if winner then
-            number = gC .. number .. "|r"
+            if self.db.profile.highlightSelf and winnerIsSelf then
+                hexColor = string.format("|cff%x%x%x", 255*r, 255*g, 255*b)
+            else
+                hexColor = gC
+            end
+            number = hexColor .. number .. "|r"
         end
         return number
     else
@@ -1236,6 +1265,7 @@ function NeedyGreedy:SetSuppressInRaid(info, suppressInRaid)
     self.db.profile.suppressInRaid = suppressInRaid
     self:RefreshTooltip()
 end
+
 function NeedyGreedy:GetAutoHideDelay(info)
     return self.db.profile.autoHideDelay
 end
@@ -1257,6 +1287,26 @@ function NeedyGreedy:SetNoSpamMode(info, noSpamMode)
         self:DisableNoSpamMode()
     end
 end
+
+function NeedyGreedy:GetHighlightSelf(info)
+    return self.db.profile.highlightSelf
+end
+
+function NeedyGreedy:SetHighlightSelf(info, highlightSelf)
+    self.db.profile.highlightSelf = highlightSelf
+    self:RefreshTooltip()
+end
+
+function NeedyGreedy:GetHighlightSelfColor(info)
+    return unpack(self.db.profile.highlightSelfColor)
+end
+
+function NeedyGreedy:SetHighlightSelfColor(info, r, g, b, a)
+    self.db.profile.highlightSelfColor = {r, g, b, a}
+    self:RefreshTooltip()
+end
+
+
 
 -- QTip Frames
 local LibQTip = LibStub('LibQTip-1.0')
@@ -1528,6 +1578,7 @@ function NeedyGreedy:PopulateReportTooltip(tooltip)
     tooltip:AddLine("")
 
     -- Create table with party names and their rolls
+    local me = UnitName("player")
     for i, name in ipairs(players) do
         local partyLine = tooltip:AddLine("")
         tooltip:SetCell(partyLine, 1, self:ColorizeName(name) .. " " .. (self.db.profile.displayIcons and BLANK_ICON or ""), nil, "LEFT", nil, nil, nil, nil, nil, minWidth)
@@ -1536,7 +1587,7 @@ function NeedyGreedy:PopulateReportTooltip(tooltip)
             local index = #items - (report.firstItem + i - 2)
             if index >= 1 then
                 local item = items[index]
-                tooltip:SetCell(partyLine, i + 1, self:ChoiceText(item.choices[name]) .. self:RollText(item.rolls[name], item.assigned == name), nil, "LEFT", nil, nil, nil, nil, nil, minWidth)
+                tooltip:SetCell(partyLine, i + 1, self:ChoiceText(item.choices[name]) .. self:RollText(item.rolls[name], item.assigned == name, item.assigned == me), nil, "LEFT", nil, nil, nil, nil, nil, minWidth)
             end
         end
     end

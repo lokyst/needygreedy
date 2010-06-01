@@ -64,5 +64,7 @@ L["Autohide delay"] = true
 L["Time to remain visible after the last item has been received (Popup mode only)"] = true
 L["Loot Summary"] = true
 L["Print loot roll summary message to chat frame"] = true
+L["Highlight Self"] = true
+L["Color loot you have won differently"] = true
 
 end
