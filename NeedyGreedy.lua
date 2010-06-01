@@ -931,9 +931,13 @@ function NeedyGreedy:ChoiceText(choice)
     return ""
 end
 
-function NeedyGreedy:RollText(number)
+function NeedyGreedy:RollText(number, winner)
     if number then
-        return " - " .. number
+        number = " - " .. number
+        if winner then
+            number = gC .. number .. "|r"
+        end
+        return number
     else
         return ""
     end
@@ -1452,7 +1456,7 @@ function NeedyGreedy:PopulateReportTooltip(tooltip)
             local index = #items - (report.firstItem + i - 2)
             if index >= 1 then
                 local item = items[index]
-                tooltip:SetCell(partyLine, i + 1, self:ChoiceText(item.choices[name]) .. self:RollText(item.rolls[name]), nil, "LEFT", nil, nil, nil, nil, nil, minWidth)
+                tooltip:SetCell(partyLine, i + 1, self:ChoiceText(item.choices[name]) .. self:RollText(item.rolls[name], item.assigned == name), nil, "LEFT", nil, nil, nil, nil, nil, minWidth)
             end
         end
     end
