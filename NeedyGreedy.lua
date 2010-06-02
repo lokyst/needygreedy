@@ -807,7 +807,7 @@ function NeedyGreedy:NoSpamMessage(link, player)
 
     local rollType = item.choices[player]
     local roll = item.rolls[player]
-    local r, g, b = GetMessageTypeColor("CHAT_MSG_LOOT")
+    local r, g, b, a = GetMessageTypeColor("CHAT_MSG_LOOT")
 
     if player == me then
         if rollType == "disenchant" then
@@ -826,9 +826,11 @@ function NeedyGreedy:NoSpamMessage(link, player)
             printString = LOOT_ROLL_WON_NO_SPAM_NEED:format(player, roll, link)
         end
     end
+
     if self.db.profile.highlightSelf and player == me then
-        r, g, b = unpack(self.db.profile.highlightSelfColor)
+        r, g, b, a = unpack(self.db.profile.highlightSelfColor)
     end
+
     DEFAULT_CHAT_FRAME:AddMessage(printString, r, g, b)
 end
 
@@ -1097,7 +1099,7 @@ function NeedyGreedy:RollText(number, winner, winnerIsSelf)
             hexColor = string.format("|cff%2X%2X%2X", 255*r, 255*g, 255*b)
         end
 
-        if self.db.profile.highlightSelf and winnerIsSelf then
+        if self.db.profile.highlightSelf and winner and winnerIsSelf then
             r, g, b, a = unpack(self.db.profile.highlightSelfColor)
             hexColor = string.format("|cff%2X%2X%2X", 255*r, 255*g, 255*b)
         end
