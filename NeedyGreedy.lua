@@ -188,7 +188,7 @@ local options = {
                     type = "color",
                     order = 41,
                     get = "GetHighlightWinnerColor",
-                    set = "GetHighlightWinnerColor",
+                    set = "SetHighlightWinnerColor",
                     hasAlpha = false,
                 },
                 showGroupOnly = {
