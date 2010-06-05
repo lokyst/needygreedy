@@ -801,7 +801,6 @@ function NeedyGreedy:NoSpamMessage(link, player)
     end
 
     if not item then
-        DevTools_Dump(link .. " " .. player)
         return
     end
 
