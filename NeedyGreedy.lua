@@ -51,6 +51,7 @@ local options = {
         general = {
             name = L['General'],
             type = 'group',
+            childGroups = "tab",
             args = {
                 nItems = {
                     name = L["Display Items"],
@@ -142,55 +143,6 @@ local options = {
                     set = "SetHideMinimapIcon",
                     width = "full"
                 },
-                filterLootMsgs = {
-                    name = L["Filter Loot Messages"],
-                    desc = L["Enable filtering of loot roll messages"],
-                    type = "toggle",
-                    order = 35,
-                    get = "GetFilterLootMsgs",
-                    set = "SetFilterLootMsgs",
-                },
-                noSpamMode = {
-                    name = L["Loot Summary"],
-                    desc = L["Print loot roll summary message to chat frame"],
-                    type = "toggle",
-                    order = 36,
-                    get = "GetNoSpamMode",
-                    set = "SetNoSpamMode",
-                },
-                highlightSelf = {
-                    name = L["Highlight Self"],
-                    desc = L["Color loot you have won differently"],
-                    type = "toggle",
-                    order = 37,
-                    get = "GetHighlightSelf",
-                    set = "SetHighlightSelf",
-                },
-                highlightSelfColor = {
-                    name = L["Highlight Self Color"],
-                    type = "color",
-                    order = 38,
-                    get = "GetHighlightSelfColor",
-                    set = "SetHighlightSelfColor",
-                    hasAlpha = false,
-                },
-                highlightWinner = {
-                    name = L["Highlight Winner"],
-                    desc = L["Color winning loot rolls differently"],
-                    type = "toggle",
-                    order = 40,
-                    get = "GetHighlightWinner",
-                    set = "SetHighlightWinner",
-                },
-
-                highlightWinnerColor = {
-                    name = L["HighLight Winner Color"],
-                    type = "color",
-                    order = 41,
-                    get = "GetHighlightWinnerColor",
-                    set = "SetHighlightWinnerColor",
-                    hasAlpha = false,
-                },
                 showGroupOnly = {
                     name = L["Hide Non-Members"],
                     desc = L["Only display the names of members currently in your party"],
@@ -198,6 +150,100 @@ local options = {
                     order = 50,
                     get = "GetShowGroupOnly",
                     set = "SetShowGroupOnly",
+                },
+
+                chatOptions = {
+                    name = L["Chat options"],
+                    type = "group",
+                    args = {
+                        filterLootMsgs = {
+                            name = L["Filter Loot Messages"],
+                            desc = L["Enable filtering of loot roll messages"],
+                            type = "toggle",
+                            order = 70,
+                            get = "GetFilterLootMsgs",
+                            set = "SetFilterLootMsgs",
+                        },
+                        noSpamMode = {
+                            name = L["Loot Summary"],
+                            desc = L["Print loot roll summary message to chat frame"],
+                            type = "toggle",
+                            order =71,
+                            get = "GetNoSpamMode",
+                            set = "SetNoSpamMode",
+                        },
+                        highlightSelfChat = {
+                            name = L["Highlight Self"],
+                            desc = L["Color loot you have won differently. Only works with loot summary enabled"],
+                            type = "toggle",
+                            order = 75,
+                            get = "GetHighlightSelfChat",
+                            set = "SetHighlightSelfChat",
+                        },
+                        highlightSelfColorChat = {
+                            name = L["Self Color"],
+                            type = "color",
+                            order = 76,
+                            get = "GetHighlightSelfChatColor",
+                            set = "SetHighlightSelfChatColor",
+                            hasAlpha = false,
+                        },
+                        highlightWinnerChat = {
+                            name = L["Highlight Winner"],
+                            desc = L["Color winning loot rolls differently. Only works with loot summary enabled"],
+                            type = "toggle",
+                            order = 77,
+                            get = "GetHighlightWinnerChat",
+                            set = "SetHighlightWinnerChat",
+                        },
+                        highlightWinnerChatColor = {
+                            name = L["Winner Color"],
+                            type = "color",
+                            order = 78,
+                            get = "GetHighlightWinnerChatColor",
+                            set = "SetHighlightWinnerChatColor",
+                            hasAlpha = false,
+                        },
+                    },
+                },
+
+                UIOptions = {
+                    name = L["UI options"],
+                    type = "group",
+                    args = {
+                        highlightSelf = {
+                            name = L["Highlight Self"],
+                            desc = L["Color loot you have won differently"],
+                            type = "toggle",
+                            order = 80,
+                            get = "GetHighlightSelf",
+                            set = "SetHighlightSelf",
+                        },
+                        highlightSelfColor = {
+                            name = L["Self Color"],
+                            type = "color",
+                            order = 81,
+                            get = "GetHighlightSelfColor",
+                            set = "SetHighlightSelfColor",
+                            hasAlpha = false,
+                        },
+                        highlightWinner = {
+                            name = L["Highlight Winner"],
+                            desc = L["Color winning loot rolls differently"],
+                            type = "toggle",
+                            order = 82,
+                            get = "GetHighlightWinner",
+                            set = "SetHighlightWinner",
+                        },
+                        highlightWinnerColor = {
+                            name = L["Winner Color"],
+                            type = "color",
+                            order = 83,
+                            get = "GetHighlightWinnerColor",
+                            set = "SetHighlightWinnerColor",
+                            hasAlpha = false,
+                        },
+                    },
                 },
             },
         },
@@ -318,6 +364,10 @@ local defaults = {
         highlightSelfColor = {1, 0.8, 0, 1},
         highlightWinner = false,
         highlightWinnerColor = {0, 1, 0, 1},
+        highlightSelfChat = false,
+        highlightSelfChatColor = {1, 0.8, 0, 1},
+        highlightWinnerChat = false,
+        highlightWinnerChatColor = {0, 1, 0, 1},
     }
 }
 
@@ -806,7 +856,6 @@ function NeedyGreedy:NoSpamMessage(link, player)
 
     local rollType = item.choices[player]
     local roll = item.rolls[player]
-    local r, g, b, a = GetMessageTypeColor("CHAT_MSG_LOOT")
 
     if player == me then
         if rollType == "disenchant" then
@@ -826,8 +875,17 @@ function NeedyGreedy:NoSpamMessage(link, player)
         end
     end
 
-    if self.db.profile.highlightSelf and player == me then
-        r, g, b, a = unpack(self.db.profile.highlightSelfColor)
+    -- Default to Blizzard color
+    local r, g, b, a = GetMessageTypeColor("CHAT_MSG_LOOT")
+
+    -- Color winner
+    if self.db.profile.highlightWinnerChat then
+        r, g, b, a = unpack(self.db.profile.highlightWinnerChatColor)
+    end
+
+    -- Color self
+    if self.db.profile.highlightSelfChat and player == me then
+        r, g, b, a = unpack(self.db.profile.highlightSelfChatColor)
     end
 
     DEFAULT_CHAT_FRAME:AddMessage(printString, r, g, b)
@@ -1349,6 +1407,7 @@ function NeedyGreedy:GetNoSpamMode(info)
     return self.db.profile.noSpamMode
 end
 
+-- Chat config
 function NeedyGreedy:SetNoSpamMode(info, noSpamMode)
     self.db.profile.noSpamMode = noSpamMode
     if noSpamMode then
@@ -1358,6 +1417,43 @@ function NeedyGreedy:SetNoSpamMode(info, noSpamMode)
     end
 end
 
+function NeedyGreedy:GetHighlightSelfChat(info)
+    return self.db.profile.highlightSelfChat
+end
+
+function NeedyGreedy:SetHighlightSelfChat(info, highlightSelfChat)
+    self.db.profile.highlightSelfChat = highlightSelfChat
+    self:RefreshTooltip()
+end
+
+function NeedyGreedy:GetHighlightSelfChatColor(info)
+    return unpack(self.db.profile.highlightSelfChatColor)
+end
+
+function NeedyGreedy:SetHighlightSelfChatColor(info, r, g, b, a)
+    self.db.profile.highlightSelfChatColor = {r, g, b, a}
+    self:RefreshTooltip()
+end
+
+function NeedyGreedy:GetHighlightWinnerChat(info)
+    return self.db.profile.highlightWinnerChat
+end
+
+function NeedyGreedy:SetHighlightWinnerChat(info, highlightWinnerChat)
+    self.db.profile.highlightWinnerChat = highlightWinnerChat
+    self:RefreshTooltip()
+end
+
+function NeedyGreedy:GetHighlightWinnerChatColor(info)
+    return unpack(self.db.profile.highlightWinnerChatColor)
+end
+
+function NeedyGreedy:SetHighlightWinnerChatColor(info, r, g, b, a)
+    self.db.profile.highlightWinnerChatColor = {r, g, b, a}
+    self:RefreshTooltip()
+end
+
+-- UI config
 function NeedyGreedy:GetHighlightSelf(info)
     return self.db.profile.highlightSelf
 end
