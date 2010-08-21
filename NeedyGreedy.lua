@@ -1610,6 +1610,10 @@ function ItemCell_Prototype:SetupCell(tooltip, value, justification, font, args)
     return self:GetWidth(), self:GetHeight()
 end
 
+function ItemCell_Prototype:getContentHeight()
+    return 30
+end
+
 -- Create functions locally to reduce garbage collection
 local function Detached_OnMouseDown()
     NeedyGreedy.detachedTooltip:StartMoving()
@@ -2156,7 +2160,7 @@ end
 
 
 -- Unit tests
---[[
+
 function NeedyGreedy:SetItems(itemList)
     items = itemList
     self:UpdateReport()
