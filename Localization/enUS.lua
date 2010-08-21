@@ -74,5 +74,7 @@ L["Color winning loot rolls differently. Only works with loot summary enabled"] 
 L["Winner Color"] = true
 L["UI options"] = true
 L["Chat options"] = true
+L["Show Loot Method"] = true
+L["Display the loot method as a databroker feed"] = true
 
 end

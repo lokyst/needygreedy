@@ -8,7 +8,8 @@ local nameList = {}
 
 -- Set up DataBroker object
 local NeedyGreedyLDB = LibStub("LibDataBroker-1.1"):NewDataObject("NeedyGreedy", {
-    type = "launcher",
+    type = "data source",
+    text = "",
     label = "Needy Greedy",
     icon = "Interface\\Buttons\\UI-GroupLoot-Dice-Up",
     OnClick = function(frame, button)
@@ -151,6 +152,15 @@ local options = {
                     get = "GetShowGroupOnly",
                     set = "SetShowGroupOnly",
                 },
+                showLootMethod = {
+                    name = L["Show Loot Method"],
+                    desc = L["Display the loot method as a databroker feed"],
+                    type = "toggle",
+                    order = 50,
+                    get = "GetShowLootMethod",
+                    set = "SetShowLootMethod",
+                },
+
 
                 chatOptions = {
                     name = L["Chat options"],
@@ -368,6 +378,7 @@ local defaults = {
         highlightSelfChatColor = {1, 0.8, 0, 1},
         highlightWinnerChat = false,
         highlightWinnerChatColor = {0, 1, 0, 1},
+        showLootMethod = false,
     }
 }
 
@@ -642,6 +653,7 @@ function NeedyGreedy:OnEnable()
     self:RegisterEvent("PLAYER_REGEN_ENABLED")
     self:RegisterEvent("PLAYER_ALIVE")
     self:RegisterEvent("RAID_ROSTER_UPDATE")
+    self:RegisterEvent("PARTY_LOOT_METHOD_CHANGED")
 
     self:ScheduleRepeatingTimer("ExpireItems", 10)
 
@@ -708,6 +720,8 @@ function NeedyGreedy:PLAYER_ENTERING_WORLD()
         end
     end
 
+    self:UpdatePartyLootMethodText()
+
     self:SetShowLootSpam()
 end
 
@@ -741,6 +755,8 @@ function NeedyGreedy:PARTY_MEMBERS_CHANGED()
 
     end
 
+    self:UpdatePartyLootMethodText()
+
     wipe(nameList)
     self:RefreshTooltip()
 end
@@ -771,6 +787,48 @@ function NeedyGreedy:RAID_ROSTER_UPDATE()
     end
 end
 
+function NeedyGreedy:PARTY_LOOT_METHOD_CHANGED()
+    self:UpdatePartyLootMethodText()
+end
+
+local LOOT_METHOD_STRINGS = {
+    ["freeforall"] = LOOT_FREE_FOR_ALL,
+    ["roundrobin"] = LOOT_ROUND_ROBIN,
+    ["group"] = LOOT_GROUP_LOOT,
+    ["master"] = LOOT_MASTER_LOOTER,
+    ["needbeforegreed"] = LOOT_NEED_BEFORE_GREED,
+}
+
+function NeedyGreedy:UpdatePartyLootMethodText()
+    if not self.db.profile.showLootMethod then
+        NeedyGreedyLDB.text = ""
+        return
+    end
+
+    local lootmethod, masterlooterPartyID, masterlooterRaidID = GetLootMethod()
+    local name = ""
+
+    if (GetNumPartyMembers() > 0 or GetNumRaidMembers() > 0) then
+        if lootmethod == "master" then
+            if masterlooterRaidID ~= nil then
+                name = GetRaidRosterInfo(masterlooterRaidID)
+            elseif masterlooterPartyID ~= nil then
+                name = UnitName("party" .. masterlooterPartyID)
+            end
+
+            if name == nil then
+                name = UnitName("player")
+            end
+            NeedyGreedyLDB.text = LOOT_METHOD_STRINGS[lootmethod] .. " (" .. name .. ")"
+        else
+
+            NeedyGreedyLDB.text = LOOT_METHOD_STRINGS[lootmethod]
+        end
+
+    else
+        NeedyGreedyLDB.text = ""
+    end
+end
 
 
 -- Chat scanning and loot recording
@@ -1401,6 +1459,15 @@ end
 function NeedyGreedy:SetAutoHideDelay(info, autoHideDelay)
     self.db.profile.autoHideDelay = autoHideDelay
     self:RefreshTooltip()
+end
+
+function NeedyGreedy:GetShowLootMethod(info)
+    return self.db.profile.showLootMethod
+end
+
+function NeedyGreedy:SetShowLootMethod(info, showLootMethod)
+    self.db.profile.showLootMethod = showLootMethod
+    self:UpdatePartyLootMethodText()
 end
 
 function NeedyGreedy:GetNoSpamMode(info)
