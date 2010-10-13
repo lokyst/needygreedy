@@ -2035,7 +2035,7 @@ end
 
 -- Chat filter functions
 local function FilterLootMsg(ChatFrameSelf, event, ...)
-    local msg = arg1
+    local msg = select(1, ...)
     for _, string in ipairs(FILTER_CHAT_LOOT_MSGS) do
         local match = NeedyGreedy:unformat(string, msg)
         if match then
