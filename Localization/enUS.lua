@@ -76,5 +76,11 @@ L["UI options"] = true
 L["Chat options"] = true
 L["Show Loot Method"] = true
 L["Display the loot method as a databroker feed"] = true
+L["Background Color"] = true
+L["Change the background color of the detached tooltip"] = true
+L["Default Style"] = true
+L["Use the default tooltip background and border style for detached tooltip"] = true
+L["Border Color"] = true
+L["Change the border color of the detached tooltip"] = true
 
 end

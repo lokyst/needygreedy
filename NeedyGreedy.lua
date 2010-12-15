@@ -261,6 +261,7 @@ local options = {
         detachedTooltipOptions = {
             name = L["Detached Tooltip"],
             type = "group",
+            childGroups = "tab",
             args = {
                 detachedTooltip = {
                     name = L["Detach Tooltip"],
@@ -326,6 +327,42 @@ local options = {
                     width = "full",
                 },
 
+                detachedTooltipUIOptions = {
+                    name = L["UI options"],
+                    type = "group",
+                    args = {
+                        useTooltipDefaults = {
+                            name = L["Default Style"],
+                            desc = L["Use the default tooltip background and border style for detached tooltip"],
+                            type = "toggle",
+                            order = 200,
+                            get = "GetUseTooltipDefault",
+                            set = "SetUseTooltipDefault",
+                            width = "full",
+                        },
+                        bgColor = {
+                            name = L["Background Color"],
+                            desc = L["Change the background color of the detached tooltip"],
+                            type = "color",
+                            order = 210,
+                            get = "GetBackgroundColor",
+                            set = "SetBackgroundColor",
+                            hasAlpha = true,
+                            disabled = function() return NeedyGreedy.db.profile.useTooltipDefaults end,
+                        },
+                        borderColor = {
+                            name = L["Border Color"],
+                            desc = L["Change the border color of the detached tooltip"],
+                            type = "color",
+                            order = 220,
+                            get = "GetBorderColor",
+                            set = "SetBorderColor",
+                            hasAlpha = true,
+                            disabled = function() return NeedyGreedy.db.profile.useTooltipDefaults end,
+                        },
+                    }
+                }
+
             },
         },
 
@@ -379,6 +416,9 @@ local defaults = {
         highlightWinnerChat = false,
         highlightWinnerChatColor = {0, 1, 0, 1},
         showLootMethod = false,
+        useTooltipDefaults = true,
+        bgColor = GameTooltip:GetBackdrop(),
+        borderColor = {GameTooltip:GetBackdropBorderColor()},
     }
 }
 
@@ -1557,6 +1597,32 @@ function NeedyGreedy:SetHighlightWinnerColor(info, r, g, b, a)
     self:RefreshTooltip()
 end
 
+function NeedyGreedy:GetUseTooltipDefault(info)
+    return self.db.profile.useTooltipDefaults
+end
+
+function NeedyGreedy:SetUseTooltipDefault(info, useTooltipDefaults)
+    self.db.profile.useTooltipDefaults = useTooltipDefaults
+    self:RefreshTooltip()
+end
+
+function NeedyGreedy:GetBackgroundColor(info)
+    return unpack(self.db.profile.bgColor)
+end
+
+function NeedyGreedy:SetBackgroundColor(info, r, g, b, a)
+    self.db.profile.bgColor = {r, g, b, a}
+    self:RefreshTooltip()
+end
+
+function NeedyGreedy:GetBorderColor(info)
+    return unpack(self.db.profile.borderColor)
+end
+
+function NeedyGreedy:SetBorderColor(info, r, g, b, a)
+    self.db.profile.borderColor = {r, g, b, a}
+    self:RefreshTooltip()
+end
 
 
 -- QTip Frames
@@ -1641,6 +1707,19 @@ function NeedyGreedy:ShowDetachedTooltip()
     if not LibQTip:IsAcquired("NeedyGreedyReport") then
         self.detachedTooltip = LibQTip:Acquire("NeedyGreedyReport", 1, "LEFT")
         self.detachedTooltip:SetScale(self.db.profile.tooltipScale)
+
+        local r, g, b, a
+        if self.db.profile.useTooltipDefaults then
+            r, g, b, a  = unpack(GameTooltip:GetBackdrop())
+            self.detachedTooltip:SetBackdropColor(r, g, b, a)
+            r, g, b, a = GameTooltip:GetBackdropBorderColor()
+            self.detachedTooltip:SetBackdropBorderColor(r, g, b, a)
+        else
+            r, g, b, a = unpack(self.db.profile.bgColor)
+            self.detachedTooltip:SetBackdropColor(r, g, b, a)
+            r, g, b, a = unpack(self.db.profile.borderColor)
+            self.detachedTooltip:SetBackdropBorderColor(r, g, b, a)
+        end
 
         -- Add columns here because tooltip:Clear() preserves columns
         for i = 1, self.db.profile.nItems do
