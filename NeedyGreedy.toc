@@ -1,4 +1,4 @@
-## Interface: 40000
+## Interface: 40200
 ## Title: NeedyGreedy
 ## Notes: Displays who has rolled need/greed/pass on what loot items
 ## Version: 1.6.0
