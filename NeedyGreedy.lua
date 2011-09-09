@@ -442,8 +442,8 @@ local defaults = {
         bgColor = GameTooltip:GetBackdrop(),
         borderColor = {GameTooltip:GetBackdropBorderColor()},
         playSoundOnAward = false,
-        soundFile = nil,
-        soundName = LSM:Fetch("sound", value),
+        soundFile = LSM:Fetch("sound", value),
+        soundName = "None",
     }
 }
 
@@ -708,6 +708,11 @@ function NeedyGreedy:OnInitialize()
 
     -- Register the minimap icon
     ngDBIcon:Register("NeedyGreedy", NeedyGreedyLDB, self.db.profile.minimap)
+
+    -- Register some sounds
+    LSM:Register("sound", "Bells", [[Sound\Spells\ShaysBell.wav]])
+    LSM:Register("sound", "Cheer", [[Sound\Event Sounds\OgreEventCheerUnique.wav]])
+
 end
 
 function NeedyGreedy:OnEnable()
