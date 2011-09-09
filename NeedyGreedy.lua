@@ -1,6 +1,7 @@
 NeedyGreedy = LibStub("AceAddon-3.0"):NewAddon("NeedyGreedy", "AceEvent-3.0", "AceTimer-3.0", "AceConsole-3.0")
 
 local L = LibStub("AceLocale-3.0"):GetLocale("NeedyGreedy", true)
+local LSM = LibStub("LibSharedMedia-3.0")
 
 local report = {}
 local items = {}
@@ -253,6 +254,27 @@ local options = {
                             set = "SetHighlightWinnerColor",
                             hasAlpha = false,
                         },
+
+                        playSoundOnAward = {
+                            name = L["Play Sound"],
+                            desc = L["Play sound when rolling is complete"],
+                            type = "toggle",
+                            order = 100,
+                            get = "GetPlaySoundOnAward",
+                            set = "SetPlaySoundOnAward",
+                        },
+
+                        soundFile = {
+                            name = 'Sound File',
+                            desc = 'Sound to play when rolling is complete',
+                            type = 'select',
+                            dialogControl = 'LSM30_Sound',
+                            style = "dropdown",
+                            values = LSM:HashTable("sound"),
+                            get = "GetSoundFile",
+                            set = "SetSoundFile",
+                        },
+
                     },
                 },
             },
@@ -419,6 +441,9 @@ local defaults = {
         useTooltipDefaults = true,
         bgColor = GameTooltip:GetBackdrop(),
         borderColor = {GameTooltip:GetBackdropBorderColor()},
+        playSoundOnAward = false,
+        soundFile = nil,
+        soundName = LSM:Fetch("sound", value),
     }
 }
 
@@ -1132,6 +1157,14 @@ function NeedyGreedy:RecordReceived(link, player)
             else
                 ROLL_TIMER = self:ScheduleTimer("RollPostProcessing", autoHideDelay)
             end
+
+            if self.db.profile.playSoundOnAward then
+                local soundFile = self.db.profile.soundFile
+                if soundFile then
+                    PlaySoundFile(soundFile, "SFX")
+                end
+            end
+
         end
     end
 
@@ -1622,6 +1655,23 @@ end
 function NeedyGreedy:SetBorderColor(info, r, g, b, a)
     self.db.profile.borderColor = {r, g, b, a}
     self:RefreshTooltip()
+end
+
+function NeedyGreedy:GetPlaySoundOnAward(info)
+    return self.db.profile.playSoundOnAward
+end
+
+function NeedyGreedy:SetPlaySoundOnAward(info, value)
+    self.db.profile.playSoundOnAward = value
+end
+
+function NeedyGreedy:GetSoundFile(info)
+    return self.db.profile.soundName
+end
+
+function NeedyGreedy:SetSoundFile(info, value)
+    self.db.profile.soundName = value
+    self.db.profile.soundFile = LSM:Fetch("sound", value)
 end
 
 
@@ -2239,7 +2289,7 @@ end
 
 
 -- Unit tests
-
+--[[
 function NeedyGreedy:SetItems(itemList)
     items = itemList
     self:UpdateReport()
@@ -2430,6 +2480,13 @@ function NeedyGreedy:TestItemList()
         }, -- [14]
     }
     self:RefreshTooltip()
+end
+
+function NeedyGreedy:TestCleanup()
+    WATCH_ITEM_BEING_ROLLED_ON = true
+    local link = "|cff0070dd|Hitem:43102:0:0:0:0:0:0:1423004768:80|h[Frozen Orb]|h|r"
+    local player = "Lubov"
+    self:RecordReceived(link, player)
 end
 --]]
 

@@ -82,5 +82,7 @@ L["Default Style"] = true
 L["Use the default tooltip background and border style for detached tooltip"] = true
 L["Border Color"] = true
 L["Change the border color of the detached tooltip"] = true
+L["Play Sound"] = true
+L["Play sound when rolling is complete"] = true
 
 end
