@@ -274,9 +274,25 @@ local options = {
                             get = "GetSoundFile",
                             set = "SetSoundFile",
                         },
-
                     },
                 },
+
+                DebugOptions = {
+                    name = L["Debug options"],
+                    type = "group",
+                    order = 200,
+                    args = {
+                        toggleDebug = {
+                            name = L["Show Debug Messages"],
+                            desc = L["Show Debugging Messages"],
+                            type = "toggle",
+                            order = 110,
+                            get = "GetToggleDebug",
+                            set = "SetToggleDebug",
+                        },
+                    },
+                },
+
             },
         },
 
@@ -444,6 +460,7 @@ local defaults = {
         playSoundOnAward = false,
         soundFile = LSM:Fetch("sound", value),
         soundName = "None",
+        debugStatus = false,
     }
 }
 
@@ -946,7 +963,8 @@ local CHAT_MSG_TABLE = {
     {LOOT_ROLL_PASSED, "RecordChoice", {2, 1, nil, "pass"}},
     {LOOT_ROLL_DISENCHANT_SELF, "RecordChoice", {1, "me", nil, "disenchant"}},
     {LOOT_ROLL_DISENCHANT, "RecordChoice", {2, 1, nil, "disenchant"}},
-    {LOOT_ROLL_ROLLED_NEED, "RecordRoll", {2, 3, 1, nil}},
+    {LOOT_ROLL_ROLLED_NEED, "RecordRoll", {2, 3, 1, nil}},                      -- "Need Roll - %d for %s by %s"
+    {LOOT_ROLL_ROLLED_NEED_ROLE_BONUS, "RecordRoll", {2, 3, 1, nil}},           -- "Need Roll - %d for %s by %s + Role Bonus";
     {LOOT_ROLL_ROLLED_GREED, "RecordRoll", {2, 3, 1, nil}},
     {LOOT_ROLL_ROLLED_DE, "RecordRoll", {2, 3, 1, nil}},
     {LOOT_ITEM_PUSHED_SELF, "RecordReceived", {1, "me", nil, nil}},
@@ -984,6 +1002,14 @@ function NeedyGreedy:NoSpamMessage(link, player)
 
     local rollType = item.choices[player]
     local roll = item.rolls[player]
+
+    -- Temporary fix until we determine the cause
+    if not roll then
+        if self.db.profile.debugStatus then
+            print("NoSpamMessage: Roll was nil")
+        end
+        roll = 0
+    end
 
     if player == me then
         if rollType == "disenchant" then
@@ -1036,7 +1062,9 @@ function NeedyGreedy:CHAT_MSG_LOOT(event,msg)
             else
                 player = stringValues[inputs[2]]
             end
-            if inputs[3] then roll = stringValues[inputs[3]] end
+            if inputs[3] then
+                roll = stringValues[inputs[3]]
+            end
             type = inputs[4]
             self:RecordParser(functionName, link, player, roll, type)
             break
@@ -1080,6 +1108,14 @@ end
 function NeedyGreedy:RecordRoll(link, player, number)
     local _, _, quality = GetItemInfo(link)
     if quality < self.db.profile.quality then return end
+
+    -- Temporary fix until we determine the cause
+    if not number then
+        if self.db.profile.debugStatus then
+            print("RecordRoll: Roll was nil")
+        end
+        number = 0
+    end
 
     for _, record in ipairs(items) do
         if record.assigned == "" and record.link == link then
@@ -1677,6 +1713,15 @@ end
 function NeedyGreedy:SetSoundFile(info, value)
     self.db.profile.soundName = value
     self.db.profile.soundFile = LSM:Fetch("sound", value)
+end
+
+-- Debug Config
+function NeedyGreedy:GetToggleDebug(info)
+    return self.db.profile.debugStatus
+end
+
+function NeedyGreedy:SetToggleDebug(info, value)
+    self.db.profile.debugStatus = value
 end
 
 

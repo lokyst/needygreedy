@@ -84,5 +84,8 @@ L["Border Color"] = true
 L["Change the border color of the detached tooltip"] = true
 L["Play Sound"] = true
 L["Play sound when rolling is complete"] = true
+L["Debug options"] = true
+L["Show Debug Messages"] = true
+L["Show Debugging Messages"] = true
 
 end
