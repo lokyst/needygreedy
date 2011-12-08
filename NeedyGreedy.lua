@@ -608,6 +608,7 @@ local function sanitizePattern(pattern)
     pattern = string.gsub(pattern, "%%s", "(.+)")
     pattern = string.gsub(pattern, "%%d", "(%%d+)")
     pattern = string.gsub(pattern, "%-", "%%-")
+    pattern = string.gsub(pattern, "%+", "%%+")
     return pattern
 end
 
