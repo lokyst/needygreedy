@@ -6,6 +6,7 @@ local LSM = LibStub("LibSharedMedia-3.0")
 local report = {}
 local items = {}
 local nameList = {}
+local EVENT_LOG = {}
 
 -- Set up DataBroker object
 local NeedyGreedyLDB = LibStub("LibDataBroker-1.1"):NewDataObject("NeedyGreedy", {
@@ -277,22 +278,6 @@ local options = {
                     },
                 },
 
-                DebugOptions = {
-                    name = L["Debug options"],
-                    type = "group",
-                    order = 200,
-                    args = {
-                        toggleDebug = {
-                            name = L["Show Debug Messages"],
-                            desc = L["Show Debugging Messages"],
-                            type = "toggle",
-                            order = 110,
-                            get = "GetToggleDebug",
-                            set = "SetToggleDebug",
-                        },
-                    },
-                },
-
             },
         },
 
@@ -416,6 +401,38 @@ local options = {
                     get = "GetSuppressInRaid",
                     set = "SetSuppressInRaid",
                 },
+            },
+        },
+
+        debugOptions = {
+            name = L["Debug Options"],
+            type = "group",
+            args = {
+                toggleDebug = {
+                    name = L["Show Debug Messages"],
+                    desc = L["Show Debugging Messages"],
+                    type = "toggle",
+                    width = "full",
+                    order = 110,
+                    get = "GetToggleDebug",
+                    set = "SetToggleDebug",
+                },
+                exportDebugLog = {
+                    name = L["Debug Log"],
+                    type = "input",
+                    multiline = 25,
+                    width = "full",
+                    order = 115,
+                    get = "GetDebugLog",
+                    set = "SetDebugLog",
+                },
+                clearDebugLog = {
+                    name = L["Clear Debug Log"],
+                    type = "execute",
+                    order = 120,
+                    func = "ClearDebugLog",
+                },
+
             },
         },
 
@@ -720,6 +737,7 @@ function NeedyGreedy:OnInitialize()
     ACD:AddToBlizOptions("NeedyGreedy", "NeedyGreedy", nil, "general")
     ACD:AddToBlizOptions("NeedyGreedy", L["Detached Tooltip"], "NeedyGreedy", "detachedTooltipOptions")
     ACD:AddToBlizOptions("NeedyGreedy", L["DataBroker Tooltip"], "NeedyGreedy", "dataBrokerOptions")
+    ACD:AddToBlizOptions("NeedyGreedy", L["Debug Options"], "NeedyGreedy", "debugOptions")
     ACD:AddToBlizOptions("NeedyGreedy", L["Profile"], "NeedyGreedy", "profile")
 
     -- Register slash options table
@@ -925,6 +943,11 @@ end
 
 -- Chat scanning and loot recording
 function NeedyGreedy:START_LOOT_ROLL(event, rollid, rollTime)
+    -- For debugging
+    if self.db.profile.debugStatus then
+        table.insert(EVENT_LOG, {event, rollid, rollTime})
+    end
+
     local texture, name, count, quality = GetLootRollItemInfo(rollid)
     local link = GetLootRollItemLink(rollid)
     if quality >= self.db.profile.quality then
@@ -1051,6 +1074,11 @@ function NeedyGreedy:NoSpamMessage(link, player)
 end
 
 function NeedyGreedy:CHAT_MSG_LOOT(event,msg)
+    -- For debugging
+    if self.db.profile.debugStatus then
+        table.insert(EVENT_LOG, {event, msg})
+    end
+
     local functionName, link, player, roll, type
     local stringValues, inputs
 
@@ -1250,6 +1278,25 @@ function NeedyGreedy:PageRight()
         report.firstItem = count
     end
     self:UpdateReport()
+end
+
+function NeedyGreedy:GetPlayers()
+    local names = {}
+    local name
+
+    if GetNumRaidMembers() > 0 then
+        for i = 1,MAX_RAID_MEMBERS do
+            name = GetRaidRosterInfo(i)
+            table.insert(names, name)
+        end
+    else
+        for _, unit in ipairs({"player", "party1", "party2", "party3", "party4"}) do
+            name = UnitName(unit)
+            table.insert(names, name)
+        end
+    end
+
+    return names
 end
 
 function NeedyGreedy:GetSortedPlayers()
@@ -1729,6 +1776,29 @@ end
 
 function NeedyGreedy:SetToggleDebug(info, value)
     self.db.profile.debugStatus = value
+end
+
+function NeedyGreedy:GetDebugLog()
+    local dumpString = ""
+
+    dumpString = dumpString .. "EventLog = "
+    dumpString = dumpString .. "\n" .. self:DumpEventLog()
+
+    dumpString = dumpString .. "\n\nGetSortedPlayers = "
+    dumpString = dumpString .. "\n" .. self:tableToString(self:GetSortedPlayers())
+
+    dumpString = dumpString .. "\n\nGetPlayers = "
+    dumpString = dumpString .. "\n" .. self:tableToString(self:GetPlayers())
+
+    return dumpString
+end
+
+function NeedyGreedy:SetDebugLog(info, value)
+end
+
+function NeedyGreedy:ClearDebugLog()
+    EVENT_LOG = {}
+    options.args.debugOptions.args.exportDebugLog.disabled = false
 end
 
 
@@ -2343,6 +2413,68 @@ function NeedyGreedy:RefreshProfile()
     self:RefreshTooltip()
 end
 
+
+-- Debugging functions
+local function cleanvalue(value)
+    valType = type(value)
+    if valType == "nil" then
+        value = "nil"
+    elseif valType == "number" then
+        value = value
+    elseif valType == "boolean" then
+        if value then
+            value = "true"
+        else
+            value = "false"
+        end
+    elseif valType == "string" then
+        tempString = string.gsub(value, "|", "||")
+        tempString = string.format("\"%s\"", tempString)
+        value = tempString
+    else
+        value = tostring(value)
+    end
+
+    return value
+end
+
+function NeedyGreedy:tableToString(tableObj)
+    if tableObj == nil then
+        return "nil"
+    elseif type(tableObj) ~= "table" then
+        return "not a table"
+    end
+
+    local dumpString = "{\n"
+    for k, v in pairs(tableObj) do
+        dumpString = dumpString .. "    [" .. k .. "] = " .. cleanvalue(v) .. ", \n"
+    end
+    dumpString = dumpString .. "}"
+
+    return dumpString
+end
+
+function NeedyGreedy:DumpEventLog()
+    --DevTools_Dump(EVENT_LOG)
+    local dumpString = "{\n"
+    local argString = ""
+    for _, event in ipairs(EVENT_LOG) do
+        for index, detail in ipairs(event) do
+            if index == 1 then
+                dumpString = dumpString .. "    \"" .. detail .. "\" = "
+            else
+                -- Convert value to a pretty format
+                argString = argString .. cleanvalue(detail) .. ","
+            end
+        end
+
+        dumpString = dumpString .. argString .. "\n"
+    end
+
+    dumpString = dumpString .. "}"
+
+    return dumpString
+end
 
 
 -- Unit tests
