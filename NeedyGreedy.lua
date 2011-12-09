@@ -895,12 +895,15 @@ function NeedyGreedy:UpdatePartyLootMethodText()
     end
 
     local lootmethod, masterlooterPartyID, masterlooterRaidID = GetLootMethod()
-    local name = ""
+    local nameServer, name
 
     if (GetNumPartyMembers() > 0 or GetNumRaidMembers() > 0) then
         if lootmethod == "master" then
             if masterlooterRaidID ~= nil then
-                name = GetRaidRosterInfo(masterlooterRaidID)
+                nameServer = GetRaidRosterInfo(masterlooterRaidID)
+                if nameserver then
+                    name = string.match(nameServer, "[^ -]+")
+                end
             elseif masterlooterPartyID ~= nil then
                 name = UnitName("party" .. masterlooterPartyID)
             end
@@ -1251,11 +1254,13 @@ end
 
 function NeedyGreedy:GetSortedPlayers()
     local list = {}
+    local nameServer, name
 
     if GetNumRaidMembers() > 0 then
         for i = 1,MAX_RAID_MEMBERS do
-            name = GetRaidRosterInfo(i)
-            if name then
+            nameServer = GetRaidRosterInfo(i)
+            if nameServer then
+                name = string.match(nameServer, "[^ -]+")
                 if not (nameList[name]) and (name ~= UNKNKOWN) then nameList[name] = name end
             end
         end
