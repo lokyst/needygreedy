@@ -498,7 +498,7 @@ local slashTable = {
 }
 
 -- Icon textures
-local iconSize = 27
+local iconSize = 20
 local NEEDYGREEDY_CHOICE = {
     ["need"] = {
         ["string"] = "|c00FF0000" .. NEED .. "|r",
@@ -517,7 +517,8 @@ local NEEDYGREEDY_CHOICE = {
         ["icon"] = "|TInterface\\Buttons\\UI-GroupLoot-DE-Up:" .. iconSize .. "|t",
     }
 }
-local BLANK_ICON = "|T:27|t"
+local BLANK_ICON = "|T:" .. iconSize .. "|t"
+iconSize = 27
 local CLOSE_ICON = "|TInterface\\Buttons\\UI-Panel-MinimizeButton-Up:" .. iconSize .. "|t"
 local PAGER_ICONS = {
     leftUp = "|TInterface\\Buttons\\UI-SpellbookIcon-PrevPage-Up:" .. iconSize .. "|t",
