@@ -417,6 +417,16 @@ local options = {
                     get = "GetToggleDebug",
                     set = "SetToggleDebug",
                 },
+                maxEvents = {
+                    name = L["Max Debug Messages"],
+                    type = "range",
+                    order = 111,
+                    min = 10,
+                    max = 500,
+                    step = 10,
+                    get = "GetMaxEvents",
+                    set = "SetMaxEvents"
+                },
                 exportDebugLog = {
                     name = L["Debug Log"],
                     type = "input",
@@ -478,6 +488,7 @@ local defaults = {
         soundFile = LSM:Fetch("sound", value),
         soundName = "None",
         debugStatus = false,
+        maxDebugEvents = 100,
     }
 }
 
@@ -1781,6 +1792,14 @@ function NeedyGreedy:SetToggleDebug(info, value)
     self.db.profile.debugStatus = value
 end
 
+function NeedyGreedy:GetMaxEvents(info)
+    return self.db.profile.maxDebugEvents
+end
+
+function NeedyGreedy:SetMaxEvents(info, value)
+    self.db.profile.maxDebugEvents = value
+end
+
 function NeedyGreedy:GetDebugLog()
     local dumpString = ""
 
@@ -2465,14 +2484,14 @@ function NeedyGreedy:DumpEventLog()
         argString = ""
         for index, detail in ipairs(event) do
             if index == 1 then
-                dumpString = dumpString .. "    \"" .. detail .. "\" = "
+                dumpString = dumpString .. "    \{\"" .. detail .. "\", "
             else
                 -- Convert value to a pretty format
                 argString = argString .. cleanvalue(detail) .. ","
             end
         end
 
-        dumpString = dumpString .. argString .. "\n"
+        dumpString = dumpString .. argString .. "\},\n"
     end
 
     dumpString = dumpString .. "}"
@@ -2484,7 +2503,7 @@ function NeedyGreedy:AddEventToLog(eventTable)
     if not eventTable then return end
 
     table.insert(EVENT_LOG, eventTable)
-    if #EVENT_LOG > 100 then
+    if #EVENT_LOG > self.db.profile.maxDebugEvents then
         table.remove(EVENT_LOG, 1)
     end
 end

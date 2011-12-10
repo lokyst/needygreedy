@@ -89,4 +89,6 @@ L["Show Debug Messages"] = true
 L["Show Debugging Messages"] = true
 L["Debug Log"] = true
 L["Clear Debug Log"] = true
+L["Max Debug Messages"] = true
+
 end
