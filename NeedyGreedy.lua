@@ -948,7 +948,7 @@ end
 function NeedyGreedy:START_LOOT_ROLL(event, rollid, rollTime)
     -- For debugging
     if self.db.profile.debugStatus then
-        table.insert(EVENT_LOG, {event, rollid, rollTime})
+        self:AddEventToLog({event, rollid, rollTime})
     end
 
     local texture, name, count, quality = GetLootRollItemInfo(rollid)
@@ -1079,7 +1079,7 @@ end
 function NeedyGreedy:CHAT_MSG_LOOT(event,msg)
     -- For debugging
     if self.db.profile.debugStatus then
-        table.insert(EVENT_LOG, {event, msg})
+        self:AddEventToLog({event, msg})
     end
 
     local functionName, link, player, roll, type
@@ -2478,6 +2478,15 @@ function NeedyGreedy:DumpEventLog()
     dumpString = dumpString .. "}"
 
     return dumpString
+end
+
+function NeedyGreedy:AddEventToLog(eventTable)
+    if not eventTable then return end
+
+    table.insert(EVENT_LOG, eventTable)
+    if #EVENT_LOG > 100 then
+        table.remove(EVENT_LOG, 1)
+    end
 end
 
 
