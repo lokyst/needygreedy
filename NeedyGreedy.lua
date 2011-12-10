@@ -994,8 +994,8 @@ local CHAT_MSG_TABLE = {
     {LOOT_ROLL_PASSED, "RecordChoice", {2, 1, nil, "pass"}},
     {LOOT_ROLL_DISENCHANT_SELF, "RecordChoice", {1, "me", nil, "disenchant"}},
     {LOOT_ROLL_DISENCHANT, "RecordChoice", {2, 1, nil, "disenchant"}},
-    {LOOT_ROLL_ROLLED_NEED, "RecordRoll", {2, 3, 1, nil}},                      -- "Need Roll - %d for %s by %s"
     {LOOT_ROLL_ROLLED_NEED_ROLE_BONUS, "RecordRoll", {2, 3, 1, nil}},           -- "Need Roll - %d for %s by %s + Role Bonus";
+    {LOOT_ROLL_ROLLED_NEED, "RecordRoll", {2, 3, 1, nil}},                      -- "Need Roll - %d for %s by %s"
     {LOOT_ROLL_ROLLED_GREED, "RecordRoll", {2, 3, 1, nil}},
     {LOOT_ROLL_ROLLED_DE, "RecordRoll", {2, 3, 1, nil}},
     {LOOT_ITEM_PUSHED_SELF, "RecordReceived", {1, "me", nil, nil}},
