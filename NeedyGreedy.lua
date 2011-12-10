@@ -2462,6 +2462,7 @@ function NeedyGreedy:DumpEventLog()
     local dumpString = "{\n"
     local argString = ""
     for _, event in ipairs(EVENT_LOG) do
+        argString = ""
         for index, detail in ipairs(event) do
             if index == 1 then
                 dumpString = dumpString .. "    \"" .. detail .. "\" = "
