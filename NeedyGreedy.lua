@@ -1977,7 +1977,7 @@ function NeedyGreedy:ShowDetachedTooltip()
         end
     end
 
-    -- Show it, et voil� !
+    -- Show it, et voila !
     self.detachedTooltip:Show()
 end
 
@@ -2025,7 +2025,7 @@ function NeedyGreedy:ShowDBTooltip(frame)
         end)
     end
 
-    -- Show it, et voil� !
+    -- Show it, et voila !
     self.dbTooltip:Show()
 end
 
