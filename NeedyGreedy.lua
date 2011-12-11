@@ -561,28 +561,28 @@ local eC = "|cffEDA55F" -- Orange
 local gC = "|cff00FF00" -- Green
 
 -- For tracking original state of detailed loot information
-local originalSpamFilterSetting = nil
+local originalSpamFilterSetting
 
 -- For tracking combat status
-local IS_IN_COMBAT = nil
+local IS_IN_COMBAT
 
 -- We track rolling on items like this to avoid the scenario where you're in
 -- combat the window pops up, you leave combat briefly before another add
 -- attacks and the window disappears as you're deciding
-local WATCH_ITEM_BEING_ROLLED_ON = nil
+local WATCH_ITEM_BEING_ROLLED_ON
 
 -- To track if there is a scheduled script
-local ROLL_TIMER = nil
+local ROLL_TIMER
 
 -- For tracking grouped status
-local IS_IN_PARTY = nil
-local IS_IN_RAID = nil
+local IS_IN_PARTY
+local IS_IN_RAID
 
 -- For tracking ghost status
-local WAS_GHOST = nil
+local WAS_GHOST
 
 -- For tracking instance changes
-local INSTANCE_NAME = nil
+local INSTANCE_NAME
 
 -- Needed for chat filter
 local FILTER_CHAT_LOOT_MSGS = {}
@@ -1977,7 +1977,7 @@ function NeedyGreedy:ShowDetachedTooltip()
         end
     end
 
-    -- Show it, et voilà !
+    -- Show it, et voilï¿½ !
     self.detachedTooltip:Show()
 end
 
@@ -2025,7 +2025,7 @@ function NeedyGreedy:ShowDBTooltip(frame)
         end)
     end
 
-    -- Show it, et voilà !
+    -- Show it, et voilï¿½ !
     self.dbTooltip:Show()
 end
 
@@ -2066,7 +2066,7 @@ function NeedyGreedy:PopulateReportTooltip(tooltip)
     for i = 1, nItems do
         local index = #items - (report.firstItem + i - 2)
         local texture = ""
-        local item = nil
+        local item
         if index >= 1 then
             item = items[index]
         end
@@ -2100,7 +2100,7 @@ function NeedyGreedy:PopulateReportTooltip(tooltip)
         for i = 1, nItems do
             local index = #items - (report.firstItem + i - 2)
             local text = ""
-            local item = nil
+            local item
             if index >= 1 then
                 item = items[index]
                 text = item.link
@@ -2241,7 +2241,7 @@ function NeedyGreedy:BuildDBReportTooltip(tooltip)
 end
 
 function NeedyGreedy:UpdateReport()
-    local tooltip = nil
+    local tooltip
     if self.detachedTooltip and self.detachedTooltip:IsShown() then
         self:BuildDetachedTooltip(self.detachedTooltip)
     elseif self.dbTooltip and self.dbTooltip:IsShown() and (not self.db.profile.detachedTooltip) then
@@ -2453,7 +2453,7 @@ end
 
 -- Debugging functions
 local function cleanvalue(value)
-    valType = type(value)
+    local valType = type(value)
     if valType == "nil" then
         value = "nil"
     elseif valType == "number" then
@@ -2465,7 +2465,7 @@ local function cleanvalue(value)
             value = "false"
         end
     elseif valType == "string" then
-        tempString = string.gsub(value, "|", "||")
+        local tempString = string.gsub(value, "|", "||")
         tempString = string.format("\"%s\"", tempString)
         value = tempString
     else
