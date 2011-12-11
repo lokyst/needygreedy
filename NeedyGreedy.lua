@@ -1087,13 +1087,17 @@ function NeedyGreedy:NoSpamMessage(link, player)
     DEFAULT_CHAT_FRAME:AddMessage(printString, r, g, b)
 end
 
-function NeedyGreedy:CHAT_MSG_LOOT(event,msg)
+function NeedyGreedy:CHAT_MSG_LOOT(event, msg)
+    self:ChatMsgLootParser(event, msg)
+end
+
+function NeedyGreedy:ChatMsgLootParser(event, msg)
     -- For debugging
     if self.db.profile.debugStatus then
         self:AddEventToLog({event, msg})
     end
 
-    local functionName, link, player, roll, type
+    local functionName, link, player, roll, rollType
     local stringValues, inputs
 
     for _, message in ipairs(CHAT_MSG_TABLE) do
@@ -1112,11 +1116,13 @@ function NeedyGreedy:CHAT_MSG_LOOT(event,msg)
             if inputs[3] then
                 roll = stringValues[inputs[3]]
             end
-            type = inputs[4]
-            self:RecordParser(functionName, link, player, roll, type)
+            rollType = inputs[4]
+            self:RecordParser(functionName, link, player, roll, rollType)
             break
         end
     end
+
+    return {msg, functionName, link, player, roll, rollType}
 end
 
 function NeedyGreedy:RecordParser(functionName, link, player, roll, type)
