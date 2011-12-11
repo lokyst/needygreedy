@@ -1106,6 +1106,7 @@ function NeedyGreedy:ChatMsgLootParser(event, msg)
             functionName = message[2]
             inputs = message[3]
             link = stringValues[inputs[1]]
+            link = self:RemoveItemCountFromLink(link)
             if inputs[2] == "me" then
                 player = UnitName("player")
             elseif inputs[2] == "---" then
@@ -1123,6 +1124,14 @@ function NeedyGreedy:ChatMsgLootParser(event, msg)
     end
 
     return {msg, functionName, link, player, roll, rollType}
+end
+
+function NeedyGreedy:RemoveItemCountFromLink(link)
+    if link == nil then return link end
+
+    local match = string.match(link, "(.+)x%d+$")
+    if match then link = match end
+    return link
 end
 
 function NeedyGreedy:RecordParser(functionName, link, player, roll, type)
