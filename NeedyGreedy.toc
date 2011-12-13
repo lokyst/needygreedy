@@ -1,7 +1,7 @@
 ## Interface: 40300
 ## Title: NeedyGreedy
 ## Notes: Displays who has rolled need/greed/pass on what loot items
-## Version: 1.9.2
+## Version: 1.9.3beta
 ## Author: lokyst, Marco
 ## SavedVariables: NeedyGreedyDB
 ## OptionalDeps:
