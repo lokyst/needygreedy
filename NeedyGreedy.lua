@@ -489,7 +489,6 @@ local defaults = {
         soundName = "None",
         debugStatus = false,
         maxDebugEvents = 100,
-        eventLog = {},
     }
 }
 
@@ -764,13 +763,6 @@ function NeedyGreedy:OnInitialize()
     -- Register some sounds
     LSM:Register("sound", "Bells", [[Sound\Spells\ShaysBell.wav]])
     LSM:Register("sound", "Cheer", [[Sound\Event Sounds\OgreEventCheerUnique.wav]])
-
-    -- Initialize the event log to save to savedvars
-    EVENT_LOG = self.db.profile.eventLog
-    self.db.profile.items = {}
-    items = self.db.profile.items
-    self.db.profile.nameList = {}
-    nameList = self.db.profile.nameList
 
 end
 
