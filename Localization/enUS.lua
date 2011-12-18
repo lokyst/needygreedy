@@ -90,5 +90,7 @@ L["Show Debugging Messages"] = true
 L["Debug Log"] = true
 L["Clear Debug Log"] = true
 L["Max Debug Messages"] = true
+L["Maximum Height"] = true
+L["Maximum height of the display window"] = true
 
 end

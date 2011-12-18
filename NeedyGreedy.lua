@@ -69,6 +69,17 @@ local options = {
                     get = "GetNItems",
                     set = "SetNItems"
                 },
+                maxHeight = {
+                    name = L["Maximum Height"],
+                    desc = L["Maximum height of the display window"],
+                    type = "range",
+                    order = 106,
+                    min = 200,
+                    max = 1200,
+                    step = 10,
+                    get = "GetMaxHeight",
+                    set = "SetMaxHeight",
+                },
                 expiry = {
                     name = L["Expiry Time"],
                     desc = L["Minutes after item is received before it is removed from display (0 = forever)"],
@@ -491,6 +502,8 @@ local defaults = {
         soundName = "None",
         debugStatus = false,
         maxDebugEvents = 100,
+        maxHeight = 250,
+        scrollStep = 20,
     }
 }
 
@@ -1503,6 +1516,15 @@ function NeedyGreedy:SetNItems(info, nItems)
     self:RefreshTooltip()
 end
 
+function NeedyGreedy:GetMaxHeight(info)
+    return self.db.profile.maxHeight
+end
+
+function NeedyGreedy:SetMaxHeight(info, value)
+    self.db.profile.maxHeight = value
+    self:RefreshTooltip()
+end
+
 function NeedyGreedy:GetExpiry(info)
     return self.db.profile.expiry
 end
@@ -1991,6 +2013,9 @@ function NeedyGreedy:ShowDetachedTooltip()
         end
     end
 
+    self.detachedTooltip:UpdateScrolling(self.db.profile.maxHeight)
+    self.detachedTooltip:SetScrollStep(self.db.profile.scrollStep)
+
     -- Show it, et voila !
     self.detachedTooltip:Show()
 end
@@ -2038,6 +2063,9 @@ function NeedyGreedy:ShowDBTooltip(frame)
             end
         end)
     end
+
+    self.dbTooltip:UpdateScrolling(self.db.profile.maxHeight)
+    self.dbTooltip:SetScrollStep(self.db.profile.scrollStep)
 
     -- Show it, et voila !
     self.dbTooltip:Show()
@@ -2258,8 +2286,12 @@ function NeedyGreedy:UpdateReport()
     local tooltip
     if self.detachedTooltip and self.detachedTooltip:IsShown() then
         self:BuildDetachedTooltip(self.detachedTooltip)
+        self.detachedTooltip:UpdateScrolling(self.db.profile.maxHeight)
+        self.detachedTooltip:SetScrollStep(self.db.profile.setStep)
     elseif self.dbTooltip and self.dbTooltip:IsShown() and (not self.db.profile.detachedTooltip) then
         self:BuildDBReportTooltip(self.dbTooltip)
+        self.dbTooltip:UpdateScrolling(self.db.profile.maxHeight)
+        self.dbTooltip:SetScrollStep(self.db.profile.setStep)
     else
         return
     end
