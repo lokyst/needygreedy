@@ -6,6 +6,8 @@ local LSM = LibStub("LibSharedMedia-3.0")
 local report = {}
 local items = {}
 local nameList = {}
+local NAME_LOG = {}
+local NAMELIST_LOG = {}
 local EVENT_LOG = {}
 
 -- Set up DataBroker object
@@ -960,6 +962,10 @@ function NeedyGreedy:START_LOOT_ROLL(event, rollid, rollTime)
     -- For debugging
     if self.db.profile.debugStatus then
         self:AddEventToLog({event, rollid, rollTime})
+
+        -- Take a snapshot of the current state of the name lists
+        table.insert(NAMELIST_LOG, self:GetSortedPlayers())
+        table.insert(NAME_LOG, self:GetPlayers())
     end
 
     local texture, name, count, quality = GetLootRollItemInfo(rollid)
@@ -1830,10 +1836,10 @@ function NeedyGreedy:GetDebugLog()
     dumpString = dumpString .. "\n" .. self:PrintTable(EVENT_LOG)
 
     dumpString = dumpString .. "\n\nGetSortedPlayers = "
-    dumpString = dumpString .. "\n" .. self:PrintTable(self:GetSortedPlayers())
+    dumpString = dumpString .. "\n" .. self:PrintTable(NAMELIST_LOG)
 
     dumpString = dumpString .. "\n\nGetPlayers = "
-    dumpString = dumpString .. "\n" .. self:PrintTable(self:GetPlayers())
+    dumpString = dumpString .. "\n" .. self:PrintTable(NAME_LOG)
 
     return dumpString
 end
