@@ -1016,7 +1016,7 @@ function NeedyGreedy:START_LOOT_ROLL(event, rollid, rollTime)
     end
 end
 
-local CHAT_MSG_TABLE = {
+NeedyGreedy.CHAT_MSG_TABLE = {
     {LOOT_ROLL_YOU_WON, "RecordAwarded", {1, "me", nil, nil}},
     {LOOT_ROLL_WON, "RecordAwarded", {2, 1, nil, nil}},
     {LOOT_ROLL_ALL_PASSED, "RecordAwarded", {1, "---", nil, nil}},
@@ -1042,6 +1042,7 @@ local CHAT_MSG_TABLE = {
     {LOOT_ITEM, "RecordReceived", {2, 1, nil, nil}},
     {LOOT_ITEM_MULTIPLE, "RecordReceived", {2, 1, nil, nil}},
 }
+local CHAT_MSG_TABLE = NeedyGreedy.CHAT_MSG_TABLE
 
 local CHAT_MSG_NO_SPAM_TABLE = {
     LOOT_ROLL_WON_NO_SPAM_DE, -- = "%1$s won: %3$s |cff818181(Disenchant - %2$d)|r";
