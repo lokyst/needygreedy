@@ -2500,6 +2500,8 @@ function NeedyGreedy:tableToString(tableObj)
 end
 
 function NeedyGreedy:PrintTable(t, indent)
+    if not t then return "nil" end
+
     if indent == nil then
         indent = ""
     end
