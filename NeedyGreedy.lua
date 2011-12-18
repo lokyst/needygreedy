@@ -1827,13 +1827,13 @@ function NeedyGreedy:GetDebugLog()
     local dumpString = ""
 
     dumpString = dumpString .. "EventLog = "
-    dumpString = dumpString .. "\n" .. self:DumpEventLog()
+    dumpString = dumpString .. "\n" .. self:PrintTable(EVENT_LOG)
 
     dumpString = dumpString .. "\n\nGetSortedPlayers = "
-    dumpString = dumpString .. "\n" .. self:tableToString(self:GetSortedPlayers())
+    dumpString = dumpString .. "\n" .. self:PrintTable(self:GetSortedPlayers())
 
     dumpString = dumpString .. "\n\nGetPlayers = "
-    dumpString = dumpString .. "\n" .. self:tableToString(self:GetPlayers())
+    dumpString = dumpString .. "\n" .. self:PrintTable(self:GetPlayers())
 
     return dumpString
 end
@@ -2499,25 +2499,25 @@ function NeedyGreedy:tableToString(tableObj)
     return dumpString
 end
 
-function NeedyGreedy:DumpEventLog()
-    --DevTools_Dump(EVENT_LOG)
-    local dumpString = "{\n"
-    local argString = ""
-    for _, event in ipairs(EVENT_LOG) do
-        argString = ""
-        for index, detail in ipairs(event) do
-            if index == 1 then
-                dumpString = dumpString .. "    \{\"" .. detail .. "\", "
-            else
-                -- Convert value to a pretty format
-                argString = argString .. cleanvalue(detail) .. ","
-            end
-        end
-
-        dumpString = dumpString .. argString .. "\},\n"
+function NeedyGreedy:PrintTable(t, indent)
+    if indent == nil then
+        indent = ""
     end
 
-    dumpString = dumpString .. "}"
+    local dumpString = "{\n"
+    for key, detail in pairs(t) do
+        -- Convert value to a pretty format
+        dumpString = dumpString .. indent .. "  [" .. tostring(key) .. "] = "
+        if type(detail) == "table" then
+            dumpString = dumpString .. self:PrintTable(detail, indent .. "  ")
+        else
+            dumpString = dumpString .. cleanvalue(detail)
+        end
+
+        dumpString = dumpString .. ",\n"
+    end
+
+    dumpString = dumpString .. indent .."}"
 
     return dumpString
 end
