@@ -509,7 +509,7 @@ local defaults = {
         soundName = "None",
         debugStatus = false,
         maxDebugEvents = 100,
-        maxHeight = 250,
+        maxHeight = 280,
         scrollStep = 20,
     }
 }
