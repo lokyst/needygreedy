@@ -1182,6 +1182,14 @@ function NeedyGreedy:RecordRoll(link, player, number)
     for _, record in ipairs(items) do
         if record.assigned == "" and record.link == link then
             record.rolls[player] = number
+
+            -- If we get to this point and there are still players with no choices fill them in with a blank
+            for _, name in pairs(nameList) do
+                if not record.choices[name] then
+                    record.choices[name] = "pass"
+                end
+            end
+
             break
         end
     end
