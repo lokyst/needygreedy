@@ -3,12 +3,19 @@ NeedyGreedy = LibStub("AceAddon-3.0"):NewAddon("NeedyGreedy", "AceEvent-3.0", "A
 local L = LibStub("AceLocale-3.0"):GetLocale("NeedyGreedy", true)
 local LSM = LibStub("LibSharedMedia-3.0")
 
-local report = {}
-local items = {}
-local nameList = {}
-local NAME_LOG = {}
-local NAMELIST_LOG = {}
-local EVENT_LOG = {}
+NeedyGreedy.report = {}
+NeedyGreedy.items = {}
+NeedyGreedy.nameList = {}
+NeedyGreedy.NAME_LOG = {}
+NeedyGreedy.NAMELIST_LOG = {}
+NeedyGreedy.EVENT_LOG = {}
+
+local report = NeedyGreedy.report
+local items = NeedyGreedy.items
+local nameList = NeedyGreedy.nameList
+local NAME_LOG = NeedyGreedy.NAME_LOG
+local NAMELIST_LOG = NeedyGreedy.NAMELIST_LOG
+local EVENT_LOG = NeedyGreedy.EVENT_LOG
 
 -- Set up DataBroker object
 local NeedyGreedyLDB = LibStub("LibDataBroker-1.1"):NewDataObject("NeedyGreedy", {
@@ -2570,8 +2577,3 @@ function NeedyGreedy:AddEventToLog(eventTable)
         table.remove(EVENT_LOG, 1)
     end
 end
-
-function NeedyGreedy:ExposeLocals()
-    return report, items, nameList, NAME_LOG, NAMELIST_LOG, EVENT_LOG
-end
-
