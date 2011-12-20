@@ -1183,7 +1183,7 @@ end
 
 function NeedyGreedy:RecordChoice(link, player, choice)
     local _, _, quality = GetItemInfo(link)
-    if quality < self.db.profile.quality then return end
+    if quality and quality < self.db.profile.quality then return end
 
     for _, record in ipairs(items) do
         if record.assigned == "" and record.link == link then
@@ -1196,7 +1196,7 @@ end
 
 function NeedyGreedy:RecordRoll(link, player, number)
     local _, _, quality = GetItemInfo(link)
-    if quality < self.db.profile.quality then return end
+    if quality and quality < self.db.profile.quality then return end
 
     -- Temporary fix until we determine the cause
     if not number then
@@ -1225,7 +1225,7 @@ end
 
 function NeedyGreedy:RecordAwarded(link, player)
     local _, _, quality = GetItemInfo(link)
-    if quality < self.db.profile.quality then return end
+    if quality and quality < self.db.profile.quality then return end
 
     for _, record in ipairs(items) do
         if record.assigned == "" and record.link == link then
@@ -1239,7 +1239,7 @@ end
 function NeedyGreedy:RecordReceived(link, player)
     local _, _, quality = GetItemInfo(link)
     -- Because disenchanted items can be white >_<9
-    if quality < ITEM_QUALITY_COMMON then return end
+    if quality and quality < ITEM_QUALITY_COMMON then return end
 
     local match = false
     for _, record in ipairs(items) do
