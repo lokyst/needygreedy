@@ -92,5 +92,7 @@ L["Clear Debug Log"] = true
 L["Max Debug Messages"] = true
 L["Maximum Height"] = true
 L["Maximum height of the display window"] = true
+L["Lock Minimap Icon"] = true
+L["Lock the position of the minimap icon"] = true
 
 end

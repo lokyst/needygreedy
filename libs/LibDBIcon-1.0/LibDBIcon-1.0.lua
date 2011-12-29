@@ -32,7 +32,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 --             and cleaned up a lot so that it no longer sucks.
 --
 
-local DBICON10 = "LibDBIcon-1.0"
+local DBICON10 = "LibDBIconMod-1.0"
 local DBICON10_MINOR = tonumber(("$Rev: 24 $"):match("(%d+)"))
 if not LibStub then error(DBICON10 .. " requires LibStub.") end
 local ldb = LibStub("LibDataBroker-1.1", true)
@@ -303,3 +303,12 @@ function lib:DisableLibrary()
 	end
 end
 
+function lib:Lock(name)
+	lib.objects[name]:SetScript("OnDragStart", nil)
+	lib.objects[name]:SetScript("OnDragStop", nil)
+end
+
+function lib:Unlock(name)
+	lib.objects[name]:SetScript("OnDragStart", onDragStart)
+	lib.objects[name]:SetScript("OnDragStop", onDragStop)
+end

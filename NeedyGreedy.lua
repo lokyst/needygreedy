@@ -51,7 +51,7 @@ local NeedyGreedyLDB = LibStub("LibDataBroker-1.1"):NewDataObject("NeedyGreedy",
         end
     end,
 })
-local ngDBIcon = LibStub("LibDBIcon-1.0")
+local ngDBIcon = LibStub("LibDBIconMod-1.0")
 
 -- Set up configuration window
 local options = {
@@ -161,9 +161,18 @@ local options = {
                     name = L["Minimap Icon"],
                     desc = L["Toggle the display of the minimap icon"],
                     type = "toggle",
-                    order = 99,
+                    order = 98,
                     get = "GetHideMinimapIcon",
                     set = "SetHideMinimapIcon",
+                    width = "full"
+                },
+                lockMinimapIcon = {
+                    name = L["Lock Minimap Icon"],
+                    desc = L["Lock the position of the minimap icon"],
+                    type = "toggle",
+                    order = 99,
+                    get = "GetLockMinimapIcon",
+                    set = "SetLockMinimapIcon",
                     width = "full"
                 },
                 showGroupOnly = {
@@ -511,6 +520,7 @@ local defaults = {
         maxDebugEvents = 100,
         maxHeight = 280,
         scrollStep = 20,
+        lockMinimapIcon = false,
     }
 }
 
@@ -864,7 +874,7 @@ function NeedyGreedy:PLAYER_ENTERING_WORLD()
     end
 
     self:UpdatePartyLootMethodText()
-
+    self:UpdateLockStatus()
     self:SetShowLootSpam()
 end
 
@@ -1599,6 +1609,16 @@ function NeedyGreedy:SetHideMinimapIcon(info, hideMinimapIcon)
     else
         ngDBIcon:Show("NeedyGreedy")
     end
+end
+
+function NeedyGreedy:GetLockMinimapIcon(info)
+    return self.db.profile.minimap.lock
+end
+
+function NeedyGreedy:SetLockMinimapIcon(info, value)
+    self.db.profile.minimap.lock = value
+
+    self:UpdateLockStatus()
 end
 
 function NeedyGreedy:GetFilterLootMsgs(info)
@@ -2432,6 +2452,14 @@ function NeedyGreedy:ResetShowLootSpam()
 end
 
 
+--
+function NeedyGreedy:UpdateLockStatus()
+    if self.db.profile.minimap.lock then
+        ngDBIcon:Lock("NeedyGreedy")
+    else
+        ngDBIcon:Unlock("NeedyGreedy")
+    end
+end
 
 -- Slash Commands
 function NeedyGreedy:SlashHide()
