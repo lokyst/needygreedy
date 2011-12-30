@@ -2454,10 +2454,12 @@ end
 
 --
 function NeedyGreedy:UpdateLockStatus()
-    if self.db.profile.minimap.lock then
-        ngDBIcon:Lock("NeedyGreedy")
-    else
-        ngDBIcon:Unlock("NeedyGreedy")
+    if not self.db.profile.minimap.hide then
+        if self.db.profile.minimap.lock then
+            ngDBIcon:Lock("NeedyGreedy")
+        else
+            ngDBIcon:Unlock("NeedyGreedy")
+        end
     end
 end
 
