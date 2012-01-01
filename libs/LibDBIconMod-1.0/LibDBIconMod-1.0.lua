@@ -1,7 +1,6 @@
 --[[
-Name: DBIcon-1.0
-Revision: $Rev: 24 $
-Author(s): Rabbit (rabbit.magtheridon@gmail.com)
+Name: DBIconMod-1.0
+Author(s): Rabbit (rabbit.magtheridon@gmail.com), lokyst
 Description: Allows addons to register to recieve a lightweight minimap icon as an alternative to more heavy LDB displays.
 Dependencies: LibStub
 License: GPL v2 or later.
@@ -26,11 +25,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 ]]
 
 -----------------------------------------------------------------------
--- DBIcon-1.0
+-- DBIconMod-1.0
 --
 -- Disclaimer: Most of this code was ripped from Barrel but fixed, streamlined
 --             and cleaned up a lot so that it no longer sucks.
 --
+-- 2011-12-31 Branched from DBIconMod-1.0 Rev 24 to add button locking by lokyst
 
 local DBICON10 = "LibDBIconMod-1.0"
 local DBICON10_MINOR = tonumber(("$Rev: 24 $"):match("(%d+)"))
