@@ -963,21 +963,19 @@ function NeedyGreedy:UpdatePartyLootMethodText()
 
     if (GetNumPartyMembers() > 0 or GetNumRaidMembers() > 0) then
         if lootmethod == "master" then
-            if masterlooterRaidID ~= nil then
-                nameServer = GetRaidRosterInfo(masterlooterRaidID)
-                if nameserver then
-                    name = string.match(nameServer, "[^ -]+")
-                end
-            elseif masterlooterPartyID ~= nil then
-                name = UnitName("party" .. masterlooterPartyID)
-            end
-
-            if name == nil then
+            if masterlooterPartyID == 0 or masterlooterRaidID == 0 then
                 name = UnitName("player")
+            elseif masterlooterRaidID then
+                name = UnitName("raid" .. masterlooterRaidID)
+            elseif masterlooterPartyID then
+                name = UnitName("party" .. masterlooterPartyID)
+            else
+                name = ""
             end
-            NeedyGreedyLDB.text = LOOT_METHOD_STRINGS[lootmethod] .. " (" .. name .. ")"
-        else
 
+            NeedyGreedyLDB.text = LOOT_METHOD_STRINGS[lootmethod] .. " (" .. name .. ")"
+
+        else
             NeedyGreedyLDB.text = LOOT_METHOD_STRINGS[lootmethod]
         end
 
