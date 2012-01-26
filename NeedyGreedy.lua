@@ -304,6 +304,16 @@ local options = {
                             get = "GetSoundFile",
                             set = "SetSoundFile",
                         },
+
+                        showWinnersAtTop = {
+                            name = 'Winners at top',
+                            desc = 'Show winners at the top of the summary',
+                            type = 'toggle',
+                            order = 120,
+                            get = "GetWinnersAtTop",
+                            set = "SetWinnersAtTop",
+
+                        },
                     },
                 },
 
@@ -521,6 +531,7 @@ local defaults = {
         maxHeight = 280,
         scrollStep = 20,
         lockMinimapIcon = false,
+        showWinnersAtTop = false,
     }
 }
 
@@ -1860,6 +1871,15 @@ function NeedyGreedy:SetSoundFile(info, value)
     self.db.profile.soundFile = LSM:Fetch("sound", value)
 end
 
+function NeedyGreedy:GetWinnersAtTop(info)
+    return self.db.profile.showWinnersAtTop
+end
+
+function NeedyGreedy:SetWinnersAtTop(info, value)
+    self.db.profile.showWinnersAtTop = value
+    self:RefreshTooltip()
+end
+
 -- Debug Config
 function NeedyGreedy:GetToggleDebug(info)
     return self.db.profile.debugStatus
@@ -2193,6 +2213,12 @@ function NeedyGreedy:PopulateReportTooltip(tooltip)
 
     tooltip:AddLine("")
 
+    -- Display winners at top
+    if self.db.profile.showWinnersAtTop then
+        self:AddWinnerText(tooltip)
+        tooltip:AddSeparator()
+    end
+
     -- Create table with party names and their rolls
     local me = UnitName("player")
     for i, name in ipairs(players) do
@@ -2208,9 +2234,15 @@ function NeedyGreedy:PopulateReportTooltip(tooltip)
         end
     end
 
-    tooltip:AddSeparator()
+    -- Display winners
+    if not self.db.profile.showWinnersAtTop then
+        tooltip:AddSeparator()
+        self:AddWinnerText(tooltip)
+    end
+end
 
-    -- Display winner
+function NeedyGreedy:AddWinnerText(tooltip)
+    local nItems = self.db.profile.nItems
     local winnerTable = {yC .. "Winner|r"}
     for i = 1, nItems do
         local index = #items - (report.firstItem + i - 2)
@@ -2220,6 +2252,7 @@ function NeedyGreedy:PopulateReportTooltip(tooltip)
         end
     end
     tooltip:AddLine(unpack(winnerTable))
+
 end
 
 function NeedyGreedy:AddHeaderText(tooltip)
