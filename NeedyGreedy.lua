@@ -521,7 +521,7 @@ local defaults = {
         highlightWinnerChatColor = {0, 1, 0, 1},
         showLootMethod = false,
         useTooltipDefaults = true,
-        bgColor = GameTooltip:GetBackdrop(),
+        bgColor = {GameTooltip:GetBackdropColor()},
         borderColor = {GameTooltip:GetBackdropBorderColor()},
         playSoundOnAward = false,
         soundFile = LSM:Fetch("sound", value),
@@ -2006,7 +2006,7 @@ function NeedyGreedy:ShowDetachedTooltip()
 
         local r, g, b, a
         if self.db.profile.useTooltipDefaults then
-            r, g, b, a  = unpack(GameTooltip:GetBackdrop())
+            r, g, b, a  = GameTooltip:GetBackdropColor()
             self.detachedTooltip:SetBackdropColor(r, g, b, a)
             r, g, b, a = GameTooltip:GetBackdropBorderColor()
             self.detachedTooltip:SetBackdropBorderColor(r, g, b, a)
