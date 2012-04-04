@@ -1130,7 +1130,9 @@ function NeedyGreedy:NoSpamMessage(link, player)
         r, g, b, a = unpack(self.db.profile.highlightSelfChatColor)
     end
 
-    DEFAULT_CHAT_FRAME:AddMessage(printString, r, g, b)
+    if printString then
+        DEFAULT_CHAT_FRAME:AddMessage(printString, r, g, b)
+    end
 end
 
 function NeedyGreedy:CHAT_MSG_LOOT(event, msg)
