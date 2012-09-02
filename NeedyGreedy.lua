@@ -894,7 +894,7 @@ function NeedyGreedy:PLAYER_LEAVING_WORLD()
 end
 
 function NeedyGreedy:PARTY_MEMBERS_CHANGED()
-    if (GetNumPartyMembers() > 0 or GetNumRaidMembers() > 0) and not IS_IN_PARTY then
+    if (GetNumGroupMembers() > 0) and not IS_IN_PARTY then
         IS_IN_PARTY = true
 
         if self.db.profile.resetInNewParty == "always" and (#items ~= 0) then
@@ -908,7 +908,7 @@ function NeedyGreedy:PARTY_MEMBERS_CHANGED()
             self:ShowDetachedTooltip()
         end
 
-    elseif (GetNumPartyMembers() == 0 and GetNumRaidMembers() == 0) then
+    elseif (GetNumGroupMembers() == 0) then
         IS_IN_PARTY = false
         IS_IN_RAID = false
 
@@ -944,7 +944,7 @@ function NeedyGreedy:PLAYER_ALIVE()
 end
 
 function NeedyGreedy:RAID_ROSTER_UPDATE()
-    if GetNumRaidMembers() > 0 then
+    if IsInRaid() then
         IS_IN_RAID = true
     else
         IS_IN_RAID = false
@@ -972,7 +972,7 @@ function NeedyGreedy:UpdatePartyLootMethodText()
     local lootmethod, masterlooterPartyID, masterlooterRaidID = GetLootMethod()
     local nameServer, name
 
-    if (GetNumPartyMembers() > 0 or GetNumRaidMembers() > 0) then
+    if (GetNumGroupMembers() > 0) then
         if lootmethod == "master" then
             if masterlooterPartyID == 0 or masterlooterRaidID == 0 then
                 name = UnitName("player")
@@ -1369,7 +1369,7 @@ function NeedyGreedy:GetPlayers()
     local names = {}
     local name
 
-    if GetNumRaidMembers() > 0 then
+    if IsInRaid() then
         for i = 1,MAX_RAID_MEMBERS do
             name = GetRaidRosterInfo(i)
             table.insert(names, name)
@@ -1388,7 +1388,7 @@ function NeedyGreedy:GetSortedPlayers()
     local list = {}
     local nameServer, name
 
-    if GetNumRaidMembers() > 0 then
+    if IsInRaid() then
         for i = 1,MAX_RAID_MEMBERS do
             nameServer = GetRaidRosterInfo(i)
             if nameServer then
@@ -1422,11 +1422,11 @@ function NeedyGreedy:GetSortedPlayers()
 end
 
 function NeedyGreedy:GetNumPlayers()
-    local nraid = GetNumRaidMembers()
+    local nraid = GetNumGroupMembers()
     if nraid > 0 then
         return nraid
     else
-        return GetNumPartyMembers() + 1
+        return GetNumGroupMembers() + 1
     end
 end
 
