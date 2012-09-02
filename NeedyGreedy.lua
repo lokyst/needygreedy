@@ -51,7 +51,7 @@ local NeedyGreedyLDB = LibStub("LibDataBroker-1.1"):NewDataObject("NeedyGreedy",
         end
     end,
 })
-local ngDBIcon = LibStub("LibDBIconMod-1.0")
+local ngDBIcon = LibStub("LibDBIcon-1.0")
 
 -- Set up configuration window
 local options = {
