@@ -680,6 +680,8 @@ local function sanitizePattern(pattern)
     pattern = string.gsub(pattern, "%(", "%%(")
     pattern = string.gsub(pattern, "%)", "%%)")
     pattern = string.gsub(pattern, "%-", "%%-")
+    pattern = string.gsub(pattern, "%[", "%%[")
+    pattern = string.gsub(pattern, "%]", "%%]")
 
     -- Now construct regexp patterns
     pattern = string.gsub(pattern, "%%s", "(.+)")
@@ -1035,20 +1037,21 @@ function NeedyGreedy:START_LOOT_ROLL(event, rollid, rollTime)
     end
 end
 
+-- {CHAT_MSG_NAME, FUNCTION, {ITEM, PLAYER, ROLLVALUE, ROLLTYPE}}
 NeedyGreedy.CHAT_MSG_TABLE = {
     {LOOT_ROLL_YOU_WON, "RecordAwarded", {1, "me", nil, nil}},
     {LOOT_ROLL_WON, "RecordAwarded", {2, 1, nil, nil}},
-    {LOOT_ROLL_ALL_PASSED, "RecordAwarded", {1, "---", nil, nil}},
+    {LOOT_ROLL_ALL_PASSED, "RecordAwarded", {2, "---", nil, nil}},
     {LOOT_ROLL_PASSED_AUTO, "RecordChoice", {2, 1, nil, "pass"}},
     {LOOT_ROLL_PASSED_AUTO_FEMALE, "RecordChoice", {2, 1, nil, "pass"}},
-    {LOOT_ROLL_NEED_SELF, "RecordChoice", {1, "me", nil, "need"}},
-    {LOOT_ROLL_GREED_SELF, "RecordChoice", {1, "me", nil, "greed"}},
-    {LOOT_ROLL_PASSED_SELF, "RecordChoice", {1, "me", nil, "pass"}},
-    {LOOT_ROLL_PASSED_SELF_AUTO, "RecordChoice", {1, "me", nil, "pass"}},
+    {LOOT_ROLL_NEED_SELF, "RecordChoice", {2, "me", nil, "need"}},
+    {LOOT_ROLL_GREED_SELF, "RecordChoice", {2, "me", nil, "greed"}},
+    {LOOT_ROLL_PASSED_SELF, "RecordChoice", {2, "me", nil, "pass"}},
+    {LOOT_ROLL_PASSED_SELF_AUTO, "RecordChoice", {2, "me", nil, "pass"}},
     {LOOT_ROLL_NEED, "RecordChoice", {2, 1, nil, "need"}},
     {LOOT_ROLL_GREED, "RecordChoice", {2, 1, nil, "greed"}},
     {LOOT_ROLL_PASSED, "RecordChoice", {2, 1, nil, "pass"}},
-    {LOOT_ROLL_DISENCHANT_SELF, "RecordChoice", {1, "me", nil, "disenchant"}},
+    {LOOT_ROLL_DISENCHANT_SELF, "RecordChoice", {2, "me", nil, "disenchant"}},
     {LOOT_ROLL_DISENCHANT, "RecordChoice", {2, 1, nil, "disenchant"}},
     {LOOT_ROLL_ROLLED_NEED_ROLE_BONUS, "RecordRoll", {2, 3, 1, nil}},           -- "Need Roll - %d for %s by %s + Role Bonus";
     {LOOT_ROLL_ROLLED_NEED, "RecordRoll", {2, 3, 1, nil}},                      -- "Need Roll - %d for %s by %s"
