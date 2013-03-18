@@ -571,19 +571,19 @@ local slashTable = {
 -- Icon textures
 local iconSize = 20
 local NEEDYGREEDY_CHOICE = {
-    ["need"] = {
+    [LOOT_ROLL_TYPE_NEED] = {
         ["string"] = "|c00FF0000" .. NEED .. "|r",
         ["icon"] = "|TInterface\\Buttons\\UI-GroupLoot-Dice-Up:" .. iconSize .. "|t",
     },
-    ["greed"] = {
+    [LOOT_ROLL_TYPE_GREED] = {
         ["string"] = "|c0000FF00" .. GREED .. "|r",
         ["icon"] = "|TInterface\\Buttons\\UI-GroupLoot-Coin-Up:" .. iconSize .. "|t",
     },
-    ["pass"] = {
+    [LOOT_ROLL_TYPE_PASS] = {
         ["string"] = "|c00CCCCCC" .. PASS .. "|r",
         ["icon"] = "|TInterface\\Buttons\\UI-GroupLoot-Pass-Up:" .. iconSize .. "|t",
     },
-    ["disenchant"] = {
+    [LOOT_ROLL_TYPE_DISENCHANT] = {
         ["string"] = "|c00FF00FF" .. ROLL_DISENCHANT .. "|r",
         ["icon"] = "|TInterface\\Buttons\\UI-GroupLoot-DE-Up:" .. iconSize .. "|t",
     }
@@ -1292,7 +1292,7 @@ function NeedyGreedy:RecordReceived(link, player)
             -- our list. However, we should cross disenchanted items that have been
             -- assigned off the list as we find them on the assumption that they
             -- would have automatically received the item anyway.
-            if record.choices[player] == "disenchant" and record.assigned == player and record.received == 0 then
+            if record.choices[player] == LOOT_ROLL_TYPE_DISENCHANT and record.assigned == player and record.received == 0 then
                 record.received = GetTime()
                 -- It's ok to put in the break since each disenchanted
                 -- result will trigger a received message
@@ -2526,10 +2526,10 @@ function NeedyGreedy:PrintReport()
             if not output[name] then
                 output[name] = {
                     ["name"] = name,
-                    ["need"] = 0,
-                    ["greed"] = 0,
-                    ["disenchant"] = 0,
-                    ["pass"] = 0,
+                    [LOOT_ROLL_TYPE_NEED] = 0,
+                    [LOOT_ROLL_TYPE_GREED] = 0,
+                    [LOOT_ROLL_TYPE_DISENCHANT] = 0,
+                    [LOOT_ROLL_TYPE_PASS] = 0,
                     ["assigned"] = 0,
                 }
             end
@@ -2553,7 +2553,7 @@ function NeedyGreedy:PrintReport()
     table.sort(sorted, function(a,b) return b.assigned < a.assigned end)
 
     for _, info in ipairs(sorted) do
-        self:Printf("%s N:%d G:%d DE:%d P:%d Wins:%d", info.name, info.need, info.greed, info.disenchant, info.pass, info.assigned)
+        self:Printf("%s N:%d G:%d DE:%d P:%d Wins:%d", info.name, info[LOOT_ROLL_TYPE_NEED], info[LOOT_ROLL_TYPE_GREED], info[LOOT_ROLL_TYPE_DISENCHANT], info[LOOT_ROLL_TYPE_PASS], info.assigned)
     end
 end
 
