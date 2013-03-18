@@ -2603,8 +2603,14 @@ function NeedyGreedy:tableToString(tableObj)
     end
 
     local dumpString = "{\n"
-    for k, v in pairs(tableObj) do
-        dumpString = dumpString .. "    [" .. k .. "] = " .. cleanvalue(v) .. ", \n"
+    if #tableObj ~= nil then
+        for k, v in ipairs(tableObj) do
+            dumpString = dumpString .. "    [" .. k .. "] = " .. cleanvalue(v) .. ", \n"
+        end
+    else
+        for k, v in pairs(tableObj) do
+            dumpString = dumpString .. "    [" .. k .. "] = " .. cleanvalue(v) .. ", \n"
+        end
     end
     dumpString = dumpString .. "}"
 
