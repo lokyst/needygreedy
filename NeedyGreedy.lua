@@ -1313,78 +1313,11 @@ function NeedyGreedy:RemoveItemCountFromLink(link)
 end
 
 function NeedyGreedy:RecordParser(functionName, link, player, roll, type)
-    if functionName == "RecordAwarded" then
-        self:RecordAwarded(link, player)
-
-        -- if no spam filter option turned on
-        if self.db.profile.noSpamMode then
-            self:NoSpamMessage(link, player)
-        end
-
-    elseif functionName == "RecordChoice" then
-        self:RecordChoice(link, player, type)
-    elseif functionName == "RecordRoll" then
-        self:RecordRoll(link, player, roll)
-    elseif functionName == "RecordReceived" then
+    if functionName == "RecordReceived" then
         self:RecordReceived(link, player)
     else
         self:Print("Unrecognised function name: " .. tostring(functionName))
     end
-end
-
-function NeedyGreedy:RecordChoice(link, player, choice)
-    local _, _, quality = GetItemInfo(link)
-    if quality and quality < self.db.profile.quality then return end
-
-    for _, record in ipairs(items) do
-        if record.assigned == "" and record.link == link then
-            record.choices[player] = choice
-            break
-        end
-    end
-    self:UpdateReport()
-end
-
-function NeedyGreedy:RecordRoll(link, player, number)
-    local _, _, quality = GetItemInfo(link)
-    if quality and quality < self.db.profile.quality then return end
-
-    -- Temporary fix until we determine the cause
-    if not number then
-        if self.db.profile.debugStatus then
-            print("RecordRoll: Roll was nil")
-        end
-        number = 0
-    end
-
-    for _, record in ipairs(items) do
-        if record.assigned == "" and record.link == link then
-            record.rolls[player] = number
-
-            -- If we get to this point and there are still players with no choices fill them in with a blank
-            for _, name in pairs(nameList) do
-                if not record.choices[name] then
-                    record.choices[name] = "pass"
-                end
-            end
-
-            break
-        end
-    end
-    self:UpdateReport()
-end
-
-function NeedyGreedy:RecordAwarded(link, player)
-    local _, _, quality = GetItemInfo(link)
-    if quality and quality < self.db.profile.quality then return end
-
-    for _, record in ipairs(items) do
-        if record.assigned == "" and record.link == link then
-            record.assigned = player
-            break
-        end
-    end
-    self:UpdateReport()
 end
 
 function NeedyGreedy:RecordReceived(link, player)
