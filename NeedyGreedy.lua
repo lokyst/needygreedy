@@ -815,6 +815,8 @@ function NeedyGreedy:OnEnable()
     self:RegisterEvent("PARTY_MEMBERS_CHANGED")
     self:RegisterEvent("START_LOOT_ROLL")
     self:RegisterEvent("CHAT_MSG_LOOT")
+    self:RegisterEvent("LOOT_HISTORY_ROLL_CHANGED")
+    self:RegisterEvent("LOOT_HISTORY_ROLL_COMPLETE")
     self:RegisterEvent("PLAYER_REGEN_DISABLED")
     self:RegisterEvent("PLAYER_REGEN_ENABLED")
     self:RegisterEvent("PLAYER_ALIVE")
@@ -889,6 +891,8 @@ function NeedyGreedy:PLAYER_ENTERING_WORLD()
     self:UpdatePartyLootMethodText()
     self:UpdateLockStatus()
     self:SetShowLootSpam()
+
+    self:LootHistoryFullUpdate()
 end
 
 function NeedyGreedy:PLAYER_LEAVING_WORLD()
@@ -1039,24 +1043,6 @@ end
 
 -- {CHAT_MSG_NAME, FUNCTION, {ITEM, PLAYER, ROLLVALUE, ROLLTYPE}}
 NeedyGreedy.CHAT_MSG_TABLE = {
-    {LOOT_ROLL_YOU_WON, "RecordAwarded", {1, "me", nil, nil}},
-    {LOOT_ROLL_WON, "RecordAwarded", {2, 1, nil, nil}},
-    {LOOT_ROLL_ALL_PASSED, "RecordAwarded", {2, "---", nil, nil}},
-    {LOOT_ROLL_PASSED_AUTO, "RecordChoice", {2, 1, nil, "pass"}},
-    {LOOT_ROLL_PASSED_AUTO_FEMALE, "RecordChoice", {2, 1, nil, "pass"}},
-    {LOOT_ROLL_NEED_SELF, "RecordChoice", {2, "me", nil, "need"}},
-    {LOOT_ROLL_GREED_SELF, "RecordChoice", {2, "me", nil, "greed"}},
-    {LOOT_ROLL_PASSED_SELF, "RecordChoice", {2, "me", nil, "pass"}},
-    {LOOT_ROLL_PASSED_SELF_AUTO, "RecordChoice", {2, "me", nil, "pass"}},
-    {LOOT_ROLL_NEED, "RecordChoice", {2, 1, nil, "need"}},
-    {LOOT_ROLL_GREED, "RecordChoice", {2, 1, nil, "greed"}},
-    {LOOT_ROLL_PASSED, "RecordChoice", {2, 1, nil, "pass"}},
-    {LOOT_ROLL_DISENCHANT_SELF, "RecordChoice", {2, "me", nil, "disenchant"}},
-    {LOOT_ROLL_DISENCHANT, "RecordChoice", {2, 1, nil, "disenchant"}},
-    {LOOT_ROLL_ROLLED_NEED_ROLE_BONUS, "RecordRoll", {2, 3, 1, nil}},           -- "Need Roll - %d for %s by %s + Role Bonus";
-    {LOOT_ROLL_ROLLED_NEED, "RecordRoll", {2, 3, 1, nil}},                      -- "Need Roll - %d for %s by %s"
-    {LOOT_ROLL_ROLLED_GREED, "RecordRoll", {2, 3, 1, nil}},
-    {LOOT_ROLL_ROLLED_DE, "RecordRoll", {2, 3, 1, nil}},
     {LOOT_ITEM_PUSHED_SELF, "RecordReceived", {1, "me", nil, nil}},
     {LOOT_ITEM_PUSHED_SELF_MULTIPLE, "RecordReceived", {1, "me", nil, nil}},
     {LOOT_ITEM_SELF, "RecordReceived", {1, "me", nil, nil}},
@@ -1174,7 +1160,148 @@ function NeedyGreedy:ChatMsgLootParser(event, msg)
         end
     end
 
+    -- For debugging
     return {msg, functionName, link, player, roll, rollType}
+end
+
+function NeedyGreedy:LOOT_HISTORY_ROLL_CHANGED(event, itemIdx, playerIdx)
+    self:LootHistoryRollParser(event, itemIdx, playerIdx)
+end
+
+function NeedyGreedy:LootHistoryRollParser(event, itemIdx, playerIdx)
+    local name, class, rollType, roll, isWinner = C_LootHistory.GetPlayerInfo(itemIdx, playerIdx)
+    local rollID, itemLink, numPlayers, isDone, winnerIdx, isMasterLoot, isCurrency = C_LootHistory.GetItem(itemIdx)
+
+    -- For debugging
+    if self.db.profile.debugStatus then
+        self:AddEventToLog({event, itemIdx, playerIdx, {name, class, rollType, roll, isWinner}, {rollID, itemLink, numPlayers, isDone, winnerIdx, isMasterLoot, isCurrency}})
+
+        -- Take a snapshot of the current state of the name lists
+        table.insert(NAMELIST_LOG, self:GetSortedPlayers())
+        table.insert(NAME_LOG, self:GetPlayers())
+    end
+
+    local _, _, quality = GetItemInfo(itemLink)
+    if quality and quality < self.db.profile.quality then return end
+
+    local foundRecord
+    for _, record in ipairs(items) do
+        if record.link == itemLink then
+            foundRecord = record
+            break
+        end
+    end
+
+    if foundRecord then
+        if isWinner and foundRecord.assigned == "" then
+            foundRecord.assigned = name
+        end
+
+        if rollType then
+            foundRecord.choices[name] = rollType
+        end
+
+        if roll then
+            foundRecord.rolls[name] = roll
+        end
+
+        self:UpdateReport()
+    end
+
+end
+
+function NeedyGreedy:LOOT_HISTORY_ROLL_COMPLETE(event)
+    self:LootHistoryRollComplete(event)
+end
+
+function NeedyGreedy:LootHistoryRollComplete(event)
+    -- For debugging
+    if self.db.profile.debugStatus then
+        self:AddEventToLog({event})
+    end
+
+    local numItems = C_LootHistory.GetNumItems();
+    for itemIdx = 1, numItems do
+        local rollID, itemLink, numPlayers, isDone, winnerIdx, isMasterLoot, isCurrency = C_LootHistory.GetItem(itemIdx)
+
+        local _, _, quality = GetItemInfo(itemLink)
+        if quality and quality >= self.db.profile.quality then
+            local foundRecord
+            for _, record in ipairs(items) do
+                if record.link == itemLink then
+                    foundRecord = record
+                    break
+                end
+            end
+
+            if foundRecord then
+                for playerIdx = 1, numPlayers do
+                    local name, class, rollType, roll, isWinner = C_LootHistory.GetPlayerInfo(itemIdx, playerIdx)
+
+                    if isWinner and foundRecord.assigned == "" then
+                        foundRecord.assigned = name
+                    end
+
+                    if rollType then
+                        foundRecord.choices[name] = rollType
+                    end
+
+                    if roll then
+                        foundRecord.rolls[name] = roll
+                    end
+                end
+            end
+        end
+    end
+
+    self:UpdateReport()
+end
+
+function NeedyGreedy:LootHistoryFullUpdate()
+    local numItems = C_LootHistory.GetNumItems();
+    for itemIdx = 1, numItems do
+        local rollID, itemLink, numPlayers, isDone, winnerIdx, isMasterLoot, isCurrency = C_LootHistory.GetItem(itemIdx)
+
+        local _, _, quality, _, _, _, _, _, _, texture = GetItemInfo(itemLink);
+        if quality >= self.db.profile.quality then
+            local newRecord = {
+                texture = texture,
+                link = itemLink,
+                itemID = itemIdFromLink(itemLink),
+                assigned = "",
+                received = 0,
+                choices = {},
+                rolls = {},
+                -- TODO figure this out
+                rollTimeOut = 0,
+            }
+
+            if isDone then
+                newRecord.received = GetTime()
+            end
+
+            table.insert(items, newRecord)
+
+            for playerIdx = 1, numPlayers do
+                local name, class, rollType, roll, isWinner = C_LootHistory.GetPlayerInfo(itemIdx, playerIdx)
+
+                if isWinner and newRecord.assigned == "" then
+                    newRecord.assigned = name
+                end
+
+                if rollType then
+                    newRecord.choices[name] = rollType
+                end
+
+                if roll then
+                    newRecord.rolls[name] = roll
+                end
+            end
+
+        end
+    end
+
+    self:UpdateReport()
 end
 
 function NeedyGreedy:RemoveItemCountFromLink(link)
