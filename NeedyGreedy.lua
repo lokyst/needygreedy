@@ -104,9 +104,9 @@ local options = {
                     type = "select",
                     order = 130,
                     values = {
-                        [ITEM_QUALITY_UNCOMMON] = ITEM_QUALITY2_DESC,
-                        [ITEM_QUALITY_RARE] = ITEM_QUALITY3_DESC,
-                        [ITEM_QUALITY_EPIC] = ITEM_QUALITY4_DESC
+                        [LE_ITEM_QUALITY_UNCOMMON] = ITEM_QUALITY2_DESC,
+                        [LE_ITEM_QUALITY_RARE] = ITEM_QUALITY3_DESC,
+                        [LE_ITEM_QUALITY_EPIC] = ITEM_QUALITY4_DESC
                     },
                     style = "dropdown",
                     get = "GetQuality",
@@ -493,7 +493,7 @@ local defaults = {
     profile = {
         nItems = 2,
         expiry = 5,
-        quality = ITEM_QUALITY_RARE,
+        quality = LE_ITEM_QUALITY_RARE,
         displayIcons = true,
         detachedTooltip = false,
         displayTextLink = false,
@@ -1323,7 +1323,7 @@ end
 function NeedyGreedy:RecordReceived(link, player)
     local _, _, quality = GetItemInfo(link)
     -- Because disenchanted items can be white >_<9
-    if quality and quality < ITEM_QUALITY_COMMON then return end
+    if quality and quality < LE_ITEM_QUALITY_COMMON then return end
 
     local match = false
     for _, record in ipairs(items) do
